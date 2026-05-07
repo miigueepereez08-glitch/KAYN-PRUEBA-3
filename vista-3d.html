@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>KAYN · Vista 3D y Despiece</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#f5c400">
+<style>
+:root{--y:#f5c400;--dark:#090909;--bg:#f4f5f7}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:#111;overscroll-behavior:none}
+header{background:linear-gradient(135deg,#050505,#222);color:#fff;padding:12px;position:sticky;top:0;z-index:20;box-shadow:0 8px 24px #0005}
+.brand{display:flex;align-items:center;gap:10px}.brand img{width:44px;height:44px;border-radius:13px;background:#000;object-fit:contain;border:1px solid #333;padding:3px}
+h1{margin:0;color:var(--y);font-size:18px}.sub{font-size:12px;color:#ddd;margin-top:2px}
+main{padding:10px;max-width:1250px;margin:auto}
+.card{background:#fff;border:1px solid #e6e8ec;border-radius:20px;padding:12px;margin-bottom:10px;box-shadow:0 8px 24px #00000012}
+.row{display:flex;gap:8px;flex-wrap:wrap}.row button,.row a{width:auto}
+button{border:0;border-radius:13px;padding:10px 13px;font-weight:900;background:#111;color:#fff}
+button.yellow{background:linear-gradient(135deg,#f5c400,#ffe06a);color:#000}.light{background:#eee!important;color:#111!important;border:1px solid #ddd!important}
+#viewWrap{background:#111;border-radius:20px;padding:8px;overflow:hidden;touch-action:none}
+canvas{width:100%;height:62vh;display:block;background:linear-gradient(180deg,#f8f8f8,#e8e8e8);border-radius:14px;touch-action:none}
+.note{font-size:12px;color:#667085}
+table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:8px;border-bottom:1px solid #eee;text-align:left}th{background:#111;color:#f5c400}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.metric{background:#111;color:#fff;border-radius:18px;padding:12px}.metric b{color:#f5c400;font-size:22px;display:block}
+@media(max-width:720px){.row button,.row a{width:100%}.grid{grid-template-columns:1fr}canvas{height:58vh}}
+</style>
+</head>
+<body>
+<header><div class="brand"><img src="/logo.png" onerror="this.src='/icon-192.png'"><div><h1>KAYN · Vista 3D y Despiece</h1><div class="sub">Lee los módulos guardados del Editor PRO</div></div></div></header>
+<main>
+<div class="card">
+  <div class="row">
+    <a href="./index.html" style="font-weight:bold;color:#111;align-self:center">← Volver a la app</a>
+    <a href="./editor-modulos.html" style="font-weight:bold;color:#111;align-self:center">Editar módulos</a>
+    <button class="yellow" onclick="loadModules()">Actualizar desde editor</button>
+    <button class="light" onclick="setView('front')">Frontal</button>
+    <button class="light" onclick="setView('side')">Lateral</button>
+    <button class="light" onclick="setView('top')">Planta</button>
+    <button class="light" onclick="setView('iso')">3D</button>
+    <button class="yellow" onclick="exportCSV()">Exportar despiece CSV</button>
+  </div>
+  <p class="note">Arrastra para girar. Pellizca o rueda para zoom. Esta vista es orientativa y se genera desde los módulos colocados.</p>
+</div>
+
+<div class="grid">
+  <div class="metric"><b id="mCount">0</b><span>Módulos</span></div>
+  <div class="metric"><b id="mArea">0 m²</b><span>Superficie aprox.</span></div>
+  <div class="metric"><b id="mPieces">0</b><span>Piezas estimadas</span></div>
+</div>
+
+<div id="viewWrap"><canvas id="view" width="1400" height="850"></canvas></div>
+
+<div class="card">
+  <h2>Despiece automático desde editor</h2>
+  <p class="note">Calculado con los módulos guardados en el Editor PRO. Es orientativo y sirve para pedido/almacén.</p>
+  <div id="breakdownBox"></div>
+</div>
+</main>
+<script>
+const canvas=document.getElementById('view'),ctx=canvas.getContext('2d');
+let modules=[],breakdown={},rotX=-0.55,rotY=0.75,zoom=70,panX=canvas.width/2,panY=canvas.height/2+120;
+let dragging=false,last=null,pinch=null;
+const LEVEL_H=2.0;
+
+function loadModules(){
+  try{
+    const saved=JSON.parse(localStorage.kaynEditorModulos||'{}');
+    modules=saved.modules||[];
+  }catch(e){modules=[]}
+  if(!modules.length){
+    document.getElementById('breakdownBox').innerHTML='<p class="note">No hay módulos guardados. Entra en Editor PRO, coloca módulos y pulsa Guardar.</p>';
+  }
+  calcBreakdown();draw();
+}
+function addBD(name,q){q=Math.round(Number(q)||0);if(q<=0)return;breakdown[name]=(breakdown[name]||0)+q}
+function calcBreakdown(){
+  breakdown={};
+  modules.forEach(m=>{
+    const len=(Number(m.largo)||0).toFixed(2)+' m', levels=Math.max(1,Number(m.niveles)||1), sys=m.sistema||'Europeo';
+    addBD('Husillos / bases',2);
+    addBD('Tablas o durmientes',2);
+    if(sys==='ULMA'){
+      addBD('Verticales ULMA 2.00 m',2*levels);
+      addBD('Horizontales exteriores ULMA '+len,levels*2);
+      addBD('Horizontales interiores ULMA '+len,Math.max(0,levels-1)*2);
+      addBD('Rodapiés ULMA amarillos '+len,levels);
+    }else{
+      addBD('Marcos europeos 2.00 m',2*levels);
+      addBD('Barandillas exteriores '+len,levels*2);
+      addBD('Barras interiores '+len,Math.max(0,levels-1)*2);
+      addBD('Rodapiés europeos '+len,levels);
+    }
+    addBD('Plataformas / chapas '+len,levels);
+    addBD('Diagonales '+len,levels);
+    addBD('Amarres',Math.max(1,Math.ceil(levels/2)));
+    addBD('Abrazaderas fijas',Math.max(1,Math.ceil(levels/2)));
+  });
+  renderBreakdown();
+}
+function renderBreakdown(){
+  const rows=Object.entries(breakdown).sort((a,b)=>a[0].localeCompare(b[0]));
+  const pieces=rows.reduce((a,r)=>a+r[1],0);
+  document.getElementById('mCount').textContent=modules.length;
+  document.getElementById('mArea').textContent=modules.reduce((a,m)=>a+(Number(m.largo)||0)*(Number(m.ancho)||0)*(Number(m.niveles)||1),0).toFixed(2)+' m²';
+  document.getElementById('mPieces').textContent=pieces;
+  const box=document.getElementById('breakdownBox');
+  if(!rows.length){box.innerHTML='<p class="note">Sin despiece todavía.</p>';return}
+  box.innerHTML='<table><tr><th>Pieza</th><th>Cantidad</th></tr>'+rows.map(r=>'<tr><td>'+r[0]+'</td><td>'+r[1]+'</td></tr>').join('')+'</table>';
+}
+function exportCSV(){
+  calcBreakdown();
+  const rows=[['Pieza','Cantidad'],...Object.entries(breakdown).sort((a,b)=>a[0].localeCompare(b[0]))];
+  const csv=rows.map(r=>r.map(c=>'"'+String(c).replaceAll('"','""')+'"').join(';')).join('\\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='despiece-3d-editor-kayn.csv';a.click();
+}
+function setView(v){
+  if(v==='front'){rotX=0;rotY=0;zoom=80}
+  if(v==='side'){rotX=0;rotY=Math.PI/2;zoom=80}
+  if(v==='top'){rotX=-Math.PI/2;rotY=0;zoom=80}
+  if(v==='iso'){rotX=-0.55;rotY=0.75;zoom=70}
+  draw();
+}
+function project(p){
+  let x=p[0],y=p[1],z=p[2];
+  let cy=Math.cos(rotY),sy=Math.sin(rotY),cx=Math.cos(rotX),sx=Math.sin(rotX);
+  let x1=x*cy-z*sy,z1=x*sy+z*cy;
+  let y1=y*cx-z1*sx,z2=y*sx+z1*cx;
+  const scale=zoom/(1+z2*0.025);
+  return {x:panX+x1*scale,y:panY-y1*scale,d:z2};
+}
+function line(a,b,color='#111',w=2){
+  const A=project(a),B=project(b);ctx.strokeStyle=color;ctx.lineWidth=w;ctx.beginPath();ctx.moveTo(A.x,A.y);ctx.lineTo(B.x,B.y);ctx.stroke();
+}
+function box(x,z,l,w,h,color){
+  // base platform rectangle at each height drawn with edges
+  const pts=[[x,0,z],[x+l,0,z],[x+l,0,z+w],[x,0,z+w],[x,h,z],[x+l,h,z],[x+l,h,z+w],[x,h,z+w]];
+  const edges=[[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
+  edges.forEach(e=>line(pts[e[0]],pts[e[1]],color,2));
+}
+function drawModule(m){
+  const x=Number(m.x)||0,z=Number(m.y)||0,l=Number(m.largo)||3,w=Number(m.ancho)||0.73,levels=Math.max(1,Number(m.niveles)||1),sys=m.sistema||'Europeo';
+  const col=sys==='ULMA'?'#d0a000':'#505050', diag=sys==='ULMA'?'#f5c400':'#777', plat='#b7b7b7', rod=sys==='ULMA'?'#f5c400':'#b12a2a';
+  const H=levels*LEVEL_H;
+  // verticals
+  [[x,z],[x+l,z],[x,z+w],[x+l,z+w]].forEach(p=>line([p[0],0,p[1]],[p[0],H,p[1]],col,3));
+  for(let j=0;j<=levels;j++){
+    const y=j*LEVEL_H;
+    // horizontals front/back and sides
+    line([x,y,z],[x+l,y,z],col,2.2); line([x,y,z+w],[x+l,y,z+w],col,2.2);
+    line([x,y,z],[x,y,z+w],col,1.5); line([x+l,y,z],[x+l,y,z+w],col,1.5);
+    if(j<levels){
+      // platform
+      line([x,y+0.08,z+w*0.15],[x+l,y+0.08,z+w*0.15],plat,5);
+      line([x,y+0.08,z+w*0.85],[x+l,y+0.08,z+w*0.85],plat,5);
+      // rodapie front
+      line([x,y+0.22,z],[x+l,y+0.22,z],rod,3);
+    }
+  }
+  // full diagonal
+  line([x,0,z],[x+l,H,z],diag,3);
+  // label
+  const P=project([x+l/2,H+0.35,z+w/2]);ctx.fillStyle='#111';ctx.font='bold 13px Arial';ctx.fillText(sys+' '+l.toFixed(2)+'m',P.x-35,P.y);
+}
+function drawGround(){
+  ctx.strokeStyle='#ddd';ctx.lineWidth=1;
+  for(let i=-20;i<=20;i++){line([i,0,-8],[i,0,12],'#e1e1e1',1);line([-8,0,i],[18,0,i],'#e1e1e1',1)}
+}
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle='#f9f9f9';ctx.fillRect(0,0,canvas.width,canvas.height);
+  drawGround();
+  modules.forEach(drawModule);
+}
+function pos(e){const r=canvas.getBoundingClientRect(),t=e.touches?e.touches[0]:e;return{x:(t.clientX-r.left)*(canvas.width/r.width),y:(t.clientY-r.top)*(canvas.height/r.height)}}
+canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);dragging=true;last=pos(e)});
+canvas.addEventListener('pointermove',e=>{if(!dragging)return;let p=pos(e);rotY+=(p.x-last.x)*0.008;rotX+=(p.y-last.y)*0.008;rotX=Math.max(-1.45,Math.min(1.15,rotX));last=p;draw()});
+canvas.addEventListener('pointerup',()=>{dragging=false;last=null});
+canvas.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.max(25,Math.min(180,zoom*(e.deltaY<0?1.08:.92)));draw()},{passive:false});
+canvas.addEventListener('touchmove',e=>{if(e.touches.length===2){e.preventDefault();let a=e.touches[0],b=e.touches[1],d=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);if(!pinch)pinch={d,zoom};zoom=Math.max(25,Math.min(180,pinch.zoom*(d/pinch.d)));draw()}},{passive:false});
+canvas.addEventListener('touchend',()=>{pinch=null},{passive:true});
+loadModules();
+</script>
+</body>
+</html>

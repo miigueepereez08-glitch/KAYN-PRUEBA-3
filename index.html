@@ -79,29 +79,23 @@ td,th{padding:10px!important;border-bottom:1px solid #eee!important}
    <div><label>Tipo acceso</label><select id="tipoAcceso"><option value="escalera">Escalera + plataforma</option><option value="torre">Torre de acceso</option></select></div><div><label>Vert. ULMA 0,50 manual</label><input id="v050" type="number" value="0"></div><div><label>Vert. ULMA 1,00 manual</label><input id="v100" type="number" value="0"></div><div><label>Vert. ULMA 1,50 manual</label><input id="v150" type="number" value="0"></div><div><label>Vert. ULMA 2,00 manual</label><input id="v200" type="number" value="0"></div><div><label>Vert. ULMA 3,00 manual</label><input id="v300" type="number" value="0"></div><div><label>Hueco esquina opcional (m)</label><input id="huecoEsquina" type="number" step="0.01" value="0"></div></div></div>
 <div class="card"><h2>Ménsulas por módulo</h2><div class="grid3"><div><label>Lado</label><select id="mensulaLado"><option value="A">Tramo A</option><option value="B">Tramo B</option></select></div><div><label>Módulo Nº o “todo”</label><input id="mensulaModulo" placeholder="1, 2, 3 o todo" value="1"></div><div><label>Medida</label><select id="mensulaMedida"><option value="0.30">0,30 m</option><option value="0.50">0,50 m</option><option value="0.70">0,70 m</option><option value="1.00">1,00 m</option><option value="1.50">1,50 m</option><option value="2.00">2,00 m</option><option value="2.50">2,50 m</option><option value="3.00">3,00 m</option></select></div><div><label>Niveles</label><select id="mensulaNiveles"><option value="todos">Todos</option><option value="superior">Solo arriba</option><option value="manual">Cantidad manual</option></select></div><div><label>Cantidad manual</label><input id="mensulaCantidad" type="number" value="0"></div></div><div class="row" style="margin-top:10px"><button class="light" onclick="addMensula()">Añadir ménsula</button><button class="red" onclick="mensulas=[];calc()">Borrar ménsulas</button></div><div id="mensulaList" class="note" style="margin-top:8px"></div></div>
 <div class="card"><h2>Accesorios manuales</h2><div class="grid3"><div><label>Amarres manuales</label><input id="amarresManual" type="number" value="0"></div><div><label>Abrazaderas giratorias</label><input id="abrazGiratorias" type="number" value="0"></div><div><label>Abrazaderas fijas extra</label><input id="abrazFijasExtra" type="number" value="0"></div><div><label>Tubos lisos 0,50 m</label><input id="tubo050" type="number" value="0"></div><div><label>Tubos lisos 1,00 m</label><input id="tubo100" type="number" value="0"></div><div><label>Puentes barandilla</label><input id="puentesBarandilla" type="number" value="0"></div><div><label>Niveladores marco europeo</label><input id="niveladores" type="number" value="0"></div><div><label>Adaptadores espiga extra</label><input id="adaptadoresExtra" type="number" value="0"></div></div><label style="margin-top:10px">Observaciones</label><textarea id="obs" placeholder="Notas de obra"></textarea><div class="row" style="margin-top:12px"><button class="yellow" onclick="safeCalc()">Calcular / actualizar</button></div><div id="errorBox" class="note" style="color:#b00000;margin-top:8px"></div></div><div class="card"><h2>Resultado rápido</h2><div id="resumen" class="grid"></div></div></section>
-<section id="plano" class="tab"><div class="card noPrint"><h2>Plano de montaje</h2><div class="row"><button class="yellow" onclick="draw2D()">Plano 2D detallado</button><button onclick="draw3D()">3D girable</button><button onclick="drawRealista()">Vista realista</button><button class="light" onclick="resetView()">Centrar / reset zoom</button><button class="light" onclick="downloadSVG()">Descargar SVG</button></div>
+<section id="plano" class="tab">
+<div class="card"><h2>Vista 3D + Despiece automático</h2><p class="note">Genera un modelo 3D y despiece desde los módulos guardados en el Editor PRO.</p><a href="/vista-3d.html" style="display:inline-block;background:linear-gradient(135deg,#f5c400,#ffe06a);color:#000;font-weight:900;padding:12px 16px;border-radius:15px;text-decoration:none">Abrir Vista 3D y Despiece</a></div>
+<div class="card noPrint"><h2>Plano de montaje</h2><div class="row"><button class="yellow" onclick="draw2D()">Plano 2D detallado</button><button onclick="draw3D()">3D girable</button><button onclick="drawRealista()">Vista realista</button><button class="light" onclick="resetView()">Centrar / reset zoom</button><button class="light" onclick="downloadSVG()">Descargar SVG</button></div>
   <div class="viewControls">
     <button class="light" onclick="zoomBy(1.2)">Zoom +</button>
     <button class="light" onclick="zoomBy(0.85)">Zoom -</button>
     <span class="pill">2D: arrastra para mover · pinza para zoom</span>
     <span class="pill">3D: arrastra para girar · pinza para zoom</span>
-  </div><p class="note">Plano orientativo. No sustituye proyecto técnico ni manual del fabricante.</p></div><div id="planBox" style="min-height:520px"><div id="zoomBadge" class="zoomBadge">100%</div><svg id="svg" width="1000" height="720"></svg><canvas id="canvas3d" width="1000" height="720" style="display:none"></canvas><canvas id="canvasReal" width="1000" height="720" style="display:none"></canvas></div><p class="viewportHint">Consejo: en plano 2D puedes arrastrar para mover y pellizcar para acercar. En 3D, arrastra para girar y pellizca para acercar.</p></section><section id="despiece" class="tab"><div class="card"><h2>Despiece</h2><div id="despieceBox"></div></div></section><section id="pedido" class="tab"><div class="card"><h2>Hoja de pedido</h2><div class="row noPrint"><button class="yellow" onclick="downloadCSV()">Exportar pedido CSV</button><button class="light" onclick="exportPedidoExcel()">Exportar pedido Excel</button><button class="light" onclick="printPedido()">Imprimir / PDF pedido</button></div><div id="pedidoBox"></div></div></section><section id="fotos" class="tab"><div class="card"><h2>Fotos de obra</h2><input id="fotoInput" type="file" accept="image/*" multiple onchange="addPhotos(event)"><div class="row"><button class="light" onclick="document.getElementById('fotoInput').click()">Añadir fotos</button><button class="red" onclick="photos=[];renderPhotos()">Borrar fotos</button></div><div id="photos" class="photos"></div></div>
+  </div><p class="note">Plano orientativo. No sustituye proyecto técnico ni manual del fabricante.</p></div><div id="planBox" style="min-height:520px"><div id="zoomBadge" class="zoomBadge">100%</div><svg id="svg" width="1000" height="720"></svg><canvas id="canvas3d" width="1000" height="720" style="display:none"></canvas><canvas id="canvasReal" width="1000" height="720" style="display:none"></canvas></div><p class="viewportHint">Consejo: en plano 2D puedes arrastrar para mover y pellizcar para acercar. En 3D, arrastra para girar y pellizca para acercar.</p></section><section id="despiece" class="tab"><div class="card"><h2>Despiece</h2><div id="despieceBox"></div></div></section><section id="pedido" class="tab"><div class="card"><h2>Hoja de pedido</h2><div class="row noPrint"><button class="yellow" onclick="downloadCSV()">Exportar pedido CSV</button><button class="light" onclick="exportPedidoExcel()">Exportar pedido Excel</button><button class="light" onclick="printPedido()">Imprimir / PDF pedido</button></div><div id="pedidoBox"></div></div></section><section id="fotos" class="tab">
+
 <div class="card">
- <h2>Conteo automático por foto <span class="pill">beta</span></h2>
- <p class="note">Sube una foto clara con piezas separadas. La app estima piezas por contraste/bordes. Úsalo como ayuda y revisa el resultado visual.</p>
- <div class="grid3">
-   <div><label>Tipo de pieza</label><select id="counterPiece"><option>Largueros</option><option>Rodapiés</option><option>Chapas / plataformas</option><option>Husillos</option><option>Marcos</option><option>Diagonales</option></select></div>
-   <div><label>Sensibilidad</label><input id="counterSensitivity" type="range" min="10" max="80" value="38"></div>
-   <div><label>Mínimo tamaño pieza</label><input id="counterMinSize" type="range" min="20" max="300" value="85"></div>
- </div>
- <input id="counterInput" type="file" accept="image/*" onchange="loadCounterPhoto(event)">
- <div class="row" style="margin-top:10px">
-   <button class="yellow" onclick="runPhotoCounter()">Contar automáticamente</button>
-   <button class="light" onclick="addCounterToDespiece()">Añadir al despiece</button>
- </div>
- <canvas id="counterCanvas" class="counterCanvas" width="900" height="600"></canvas>
- <div id="counterResult" class="resultBox">Resultado: 0 piezas</div>
-</div></section>
+  <h2>Conteo de material</h2>
+  <p class="note">El contador antiguo se ha eliminado. Para contar material por foto usa ahora <b>Contabilidad → Contabilidad Foto PRO</b>.</p>
+</div>
+
+<div class="card"><h2>Fotos de obra</h2><input id="fotoInput" type="file" accept="image/*" multiple onchange="addPhotos(event)"><div class="row"><button class="light" onclick="document.getElementById('fotoInput').click()">Añadir fotos</button><button class="red" onclick="photos=[];renderPhotos()">Borrar fotos</button></div><div id="photos" class="photos"></div></div>
+</section>
 
 
 <section id="contabilidad" class="tab">
@@ -165,54 +159,7 @@ td,th{padding:10px!important;border-bottom:1px solid #eee!important}
   <h2>Contabilidad asistida de material</h2>
   <p style="margin:0;color:#ddd">La foto propone una cantidad; tú corriges con +/− y queda guardado en inventario real.</p>
  </div>
- <div class="card">
-  <h2>Clasificar foto / paquete</h2>
-  <div class="grid3">
-    <div><label>Sistema</label><select id="stockSistema"><option value="Europeo">Europeo</option><option value="ULMA">ULMA</option></select></div>
-    <div><label>Material</label><select id="stockMaterial" onchange="updateStockMeasures()">
-      <option value="Plataforma escalera">Plataforma escalera</option>
-      <option value="Plataforma normal">Plataforma normal</option>
-      <option value="Rodapié">Rodapié</option>
-      <option value="Barra / larguero">Barra / larguero</option>
-      <option value="Medio marco">Medio marco</option>
-      <option value="Marco europeo">Marco europeo</option>
-      <option value="Diagonal">Diagonal</option>
-      <option value="Husillo">Husillo</option>
-      <option value="Vertical ULMA">Vertical ULMA</option>
-      <option value="Horizontal ULMA">Horizontal ULMA</option>
-      <option value="Ménsula">Ménsula</option>
-    </select></div>
-    <div><label>Medida</label><select id="stockMedida"></select></div>
-  </div>
-  <div class="grid3" style="margin-top:10px">
-    <div><label>Conteo asistido final</label><input id="stockCantidad" type="number" value="0"></div>
-    <div><label>Obra / almacén</label><input id="stockUbicacion" placeholder="Almacén, obra..."></div>
-    <div><label>Nota</label><input id="stockNota" placeholder="Paquete, zona, foto..."></div>
-  </div>
-  <div class="row" style="margin-top:10px">
-    <button class="yellow" onclick="document.getElementById('stockPhotoInput').click()">Subir foto y contar</button>
-    <button class="light" onclick="stockAdjust(1)">+1</button>
-    <button class="light" onclick="stockAdjust(-1)">−1</button>
-    <button class="yellow" onclick="saveStockItem()">Guardar en inventario</button>
-  </div>
-  <input id="stockPhotoInput" type="file" accept="image/*" onchange="loadStockPhoto(event)" style="display:none">
-  <div class="qtyControls" style="margin-top:12px">
-    <span class="pill tagAuto">IA asistida</span>
-    <span class="qtyNumber" id="stockQtyView">0</span>
-    <span class="pill tagWarn">Revisar visualmente antes de guardar</span>
-  </div>
-  <canvas id="stockCanvas" class="counterCanvas" width="900" height="600"></canvas>
-  <p class="note" id="stockTip">Consejo: para rodapiés ignora plataformas laterales; para plataformas separa plataforma normal y plataforma de escalera.</p>
- </div>
- <div class="card">
-  <h2>Inventario guardado</h2>
-  <div class="row noPrint">
-    <button class="light" onclick="exportStockCSV()">Exportar inventario CSV</button>
-    <button class="light" onclick="addStockToDespiece()">Añadir inventario al despiece</button>
-    <button class="red" onclick="if(confirm('¿Borrar inventario?')){stockItems=[];renderStockTable();}">Borrar inventario</button>
-  </div>
-  <div id="stockTable"></div>
- </div>
+ 
 </section>
 
 <section id="guardar" class="tab"><div class="card"><h2>Guardar obras</h2><div class="row"><button class="yellow" onclick="saveWork()">Guardar obra</button><button class="light" onclick="newWork()">Nueva obra</button></div><div id="saved"></div></div></section><section id="informe" class="tab"><div class="card"><h2>Informe / PDF</h2><div class="row noPrint"><button class="yellow" onclick="printPDF()">Crear PDF</button><button class="light" onclick="copyReport()">Copiar informe</button></div><div id="report"></div></div></section>
@@ -696,74 +643,12 @@ function printPedido(){
 
 function downloadSVG(){let a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([$('svg').outerHTML],{type:'image/svg+xml'})); a.download='plano-kayn.svg'; a.click()}function reportText(){return `KAYN ANDAMIOS\nObra: ${$('obraNombre').value||''}\nCliente: ${$('cliente').value||''}\nSistema: ${$('sistema').value}\nSuperficie: ${last.area.toFixed(2)} m²\nMódulos: ${last.modCount}\nNiveles: ${last.levels}\nObservaciones:\n${$('obs').value||''}\n\nPlano: primer nivel solo con barras exteriores; diagonales completas por paño y separadas por medida; acceso con plataforma de escalera; medidas de módulos y marcos de paso marcados.\n\nNota: medición orientativa. Revisar montaje según normativa, fabricante, terreno, cargas y técnico competente.`}function renderReport(){renderBreakdown();$('report').innerHTML=`<div style="display:flex;gap:12px;align-items:center"><img src="/logo.png" style="height:70px"><div><h2>KAYN ANDAMIOS</h2><p>Informe de montaje</p></div></div><pre style="white-space:pre-wrap;font-family:Arial">${reportText()}</pre><h3>Despiece</h3>${$('despieceBox').innerHTML}<h3>Fotos</h3><div class="photos">${photos.map(p=>`<img src="${p}">`).join('')}</div>`}function printPDF(){renderReport();window.print()}function copyReport(){navigator.clipboard.writeText(reportText()).then(()=>alert('Informe copiado'))}function addPhotos(e){[...e.target.files].forEach(f=>{let r=new FileReader();r.onload=ev=>{photos.push(ev.target.result);renderPhotos()};r.readAsDataURL(f)});e.target.value=''}function renderPhotos(){$('photos').innerHTML=photos.map(p=>`<img src="${p}">`).join('')}
 let counterImage=null, counterLastCount=0;
-function loadCounterPhoto(e){
- const file=e.target.files && e.target.files[0];
- if(!file)return;
- const img=new Image();
- img.onload=()=>{
-   counterImage=img;
-   const c=$('counterCanvas'), ctx=c.getContext('2d');
-   const ratio=Math.min(c.width/img.width,c.height/img.height);
-   const w=img.width*ratio,h=img.height*ratio;
-   ctx.clearRect(0,0,c.width,c.height);
-   ctx.drawImage(img,0,0,w,h);
-   $('counterResult').textContent='Foto cargada. Pulsa “Contar automáticamente”.';
- };
- img.src=URL.createObjectURL(file);
-}
-function runPhotoCounter(){
- if(!counterImage){alert('Primero sube una foto para contar.');return;}
- const c=$('counterCanvas'), ctx=c.getContext('2d');
- const ratio=Math.min(c.width/counterImage.width,c.height/counterImage.height);
- const w=Math.floor(counterImage.width*ratio), h=Math.floor(counterImage.height*ratio);
- ctx.clearRect(0,0,c.width,c.height); ctx.drawImage(counterImage,0,0,w,h);
- const img=ctx.getImageData(0,0,w,h), data=img.data;
- const sens=safeInt('counterSensitivity',38), minSize=safeInt('counterMinSize',85);
- let mask=new Uint8Array(w*h);
- for(let y=1;y<h-1;y++){
-   for(let x=1;x<w-1;x++){
-     let i=(y*w+x)*4, g=(data[i]+data[i+1]+data[i+2])/3;
-     let i2=(y*w+x+1)*4, i3=((y+1)*w+x)*4;
-     let gx=Math.abs(g-(data[i2]+data[i2+1]+data[i2+2])/3);
-     let gy=Math.abs(g-(data[i3]+data[i3+1]+data[i3+2])/3);
-     if(gx+gy>sens) mask[y*w+x]=1;
-   }
- }
- let seen=new Uint8Array(w*h), boxes=[], q=[];
- for(let y=0;y<h;y+=2){
-   for(let x=0;x<w;x+=2){
-     let idx=y*w+x; if(!mask[idx]||seen[idx])continue;
-     let minx=x,maxx=x,miny=y,maxy=y,count=0; q=[idx]; seen[idx]=1;
-     while(q.length){
-       let p=q.pop(), cx=p%w, cy=Math.floor(p/w); count++;
-       if(cx<minx)minx=cx;if(cx>maxx)maxx=cx;if(cy<miny)miny=cy;if(cy>maxy)maxy=cy;
-       for(let dy=-2;dy<=2;dy+=2)for(let dx=-2;dx<=2;dx+=2){
-         if(!dx&&!dy)continue; let nx=cx+dx,ny=cy+dy; if(nx<0||ny<0||nx>=w||ny>=h)continue;
-         let ni=ny*w+nx; if(mask[ni]&&!seen[ni]){seen[ni]=1;q.push(ni);}
-       }
-     }
-     let bw=maxx-minx,bh=maxy-miny, area=bw*bh;
-     if(area>minSize && Math.max(bw,bh)>18 && count>12) boxes.push({minx,miny,bw,bh,area});
-   }
- }
- boxes.sort((a,b)=>b.area-a.area);
- let filtered=[];
- boxes.forEach(b=>{
-   let overlap=filtered.some(f=>!(b.minx>f.minx+f.bw||b.minx+b.bw<f.minx||b.miny>f.miny+f.bh||b.miny+b.bh<f.miny));
-   if(!overlap)filtered.push(b);
- });
- counterLastCount=filtered.length;
- ctx.lineWidth=3; ctx.strokeStyle='#f5c400'; ctx.fillStyle='rgba(245,196,0,.18)'; ctx.font='16px Arial';
- filtered.forEach((b,i)=>{ctx.fillRect(b.minx,b.miny,b.bw,b.bh);ctx.strokeRect(b.minx,b.miny,b.bw,b.bh);ctx.fillStyle='#111';ctx.fillText(String(i+1),b.minx+4,b.miny+18);ctx.fillStyle='rgba(245,196,0,.18)'});
- $('counterResult').textContent='Resultado: '+counterLastCount+' piezas detectadas ('+safeVal('counterPiece','pieza')+'). Revisa visualmente antes de añadir.';
-}
-function addCounterToDespiece(){
- if(!counterLastCount){alert('Primero cuenta una foto.');return;}
- const k='Foto - '+safeVal('counterPiece','Pieza');
- countedPhotoPieces[k]=(countedPhotoPieces[k]||0)+counterLastCount;
- renderBreakdown(); renderPedido(); renderReport();
- alert('Añadido al despiece: '+k+' x '+counterLastCount);
-}
+
+
+
+
+
+
 
 
 const stockMeasureMap={
@@ -780,101 +665,24 @@ const stockMeasureMap={
  "Ménsula":["0.30 m","0.50 m","0.70 m","1.00 m","1.50 m","2.00 m","2.50 m","3.00 m"]
 };
 let stockImage=null, stockDetected=0;
-function updateStockMeasures(){
- const mat=safeVal('stockMaterial','Plataforma escalera');
- const sel=$('stockMedida'); if(!sel)return;
- sel.innerHTML=(stockMeasureMap[mat]||["manual"]).map(m=>`<option value="${m}">${m}</option>`).join('');
- const tip=$('stockTip');
- if(tip){
-   let msg='Conteo asistido: la app propone, tú corriges.';
-   if(mat==='Rodapié') msg='Rodapiés: ignora plataformas u objetos laterales que aparezcan en la foto.';
-   if(mat==='Plataforma normal') msg='Plataformas normales: no mezclar con plataformas de escalera; si hay 3 de escalera, cuéntalas aparte.';
-   if(mat==='Plataforma escalera') msg='Plataformas de escalera: contar solo las de trampilla/escalera.';
-   if(mat==='Barra / larguero' || mat==='Diagonal') msg='Barras/diagonales: mejor contar asistido por puntas visibles y corregir con +/−.';
-   tip.textContent=msg;
- }
-}
-function stockAdjust(delta){
- const inp=$('stockCantidad'); if(!inp)return;
- let v=Math.max(0,(parseInt(inp.value||0)||0)+delta);
- inp.value=v; const q=$('stockQtyView'); if(q)q.textContent=v;
-}
-function loadStockPhoto(e){
- const file=e.target.files && e.target.files[0]; if(!file)return;
- const img=new Image();
- img.onload=()=>{
-   stockImage=img;
-   const c=$('stockCanvas'), ctx=c.getContext('2d');
-   const ratio=Math.min(c.width/img.width,c.height/img.height);
-   const w=img.width*ratio,h=img.height*ratio;
-   ctx.clearRect(0,0,c.width,c.height); ctx.drawImage(img,0,0,w,h);
-   // reuse a simplified assisted estimator by material
-   let estimated=estimateStockByMaterial(ctx,w,h,safeVal('stockMaterial',''));
-   stockDetected=estimated;
-   $('stockCantidad').value=estimated; $('stockQtyView').textContent=estimated;
- };
- img.src=URL.createObjectURL(file);
-}
-function estimateStockByMaterial(ctx,w,h,mat){
- const img=ctx.getImageData(0,0,w,h), data=img.data;
- let sens= mat.includes('Barra')||mat.includes('Diagonal') ? 30 : 38;
- let minSize= mat.includes('Husillo') ? 45 : (mat.includes('Marco')?140:85);
- let mask=new Uint8Array(w*h);
- for(let y=1;y<h-1;y++){
-  for(let x=1;x<w-1;x++){
-    let i=(y*w+x)*4,g=(data[i]+data[i+1]+data[i+2])/3;
-    let i2=(y*w+x+1)*4,i3=((y+1)*w+x)*4;
-    let gx=Math.abs(g-(data[i2]+data[i2+1]+data[i2+2])/3), gy=Math.abs(g-(data[i3]+data[i3+1]+data[i3+2])/3);
-    if(gx+gy>sens)mask[y*w+x]=1;
-  }
- }
- let seen=new Uint8Array(w*h), boxes=[], q=[];
- for(let y=0;y<h;y+=2){for(let x=0;x<w;x+=2){
-   let idx=y*w+x;if(!mask[idx]||seen[idx])continue;
-   let minx=x,maxx=x,miny=y,maxy=y,count=0;q=[idx];seen[idx]=1;
-   while(q.length){let p=q.pop(),cx=p%w,cy=Math.floor(p/w);count++;minx=Math.min(minx,cx);maxx=Math.max(maxx,cx);miny=Math.min(miny,cy);maxy=Math.max(maxy,cy);
-    for(let dy=-2;dy<=2;dy+=2)for(let dx=-2;dx<=2;dx+=2){if(!dx&&!dy)continue;let nx=cx+dx,ny=cy+dy;if(nx<0||ny<0||nx>=w||ny>=h)continue;let ni=ny*w+nx;if(mask[ni]&&!seen[ni]){seen[ni]=1;q.push(ni);}}
-   }
-   let bw=maxx-minx,bh=maxy-miny,area=bw*bh;
-   if(area>minSize && Math.max(bw,bh)>18 && count>12)boxes.push({minx,miny,bw,bh,area});
- }}
- boxes.sort((a,b)=>b.area-a.area);
- let filtered=[];
- boxes.forEach(b=>{let overlap=filtered.some(f=>!(b.minx>f.minx+f.bw||b.minx+b.bw<f.minx||b.miny>f.miny+f.bh||b.miny+b.bh<f.miny));if(!overlap)filtered.push(b);});
- // Material adjustments: these are only starting guesses; user corrects.
- let count=filtered.length;
- if(mat==='Plataforma escalera') count=Math.max(0,Math.round(count*0.9));
- if(mat==='Rodapié') count=Math.max(0,Math.round(count*0.75));
- if(mat==='Barra / larguero' || mat==='Diagonal') count=Math.max(0,Math.round(count*1.15));
- ctx.lineWidth=3; ctx.strokeStyle='#f5c400'; ctx.fillStyle='rgba(245,196,0,.18)'; ctx.font='16px Arial';
- filtered.forEach((b,i)=>{ctx.fillRect(b.minx,b.miny,b.bw,b.bh);ctx.strokeRect(b.minx,b.miny,b.bw,b.bh);ctx.fillStyle='#111';ctx.fillText(String(i+1),b.minx+4,b.miny+18);ctx.fillStyle='rgba(245,196,0,.18)'});
- return count;
-}
-function saveStockItem(){
- const item={sistema:safeVal('stockSistema','Europeo'), material:safeVal('stockMaterial',''), medida:safeVal('stockMedida',''), cantidad:safeInt('stockCantidad',0), ubicacion:safeVal('stockUbicacion',''), nota:safeVal('stockNota','')};
- if(!item.cantidad){alert('Pon cantidad antes de guardar.');return;}
- stockItems.push(item); renderStockTable();
-}
-function renderStockTable(){
- let grouped={};
- stockItems.forEach(it=>{let k=`${it.sistema} | ${it.material} | ${it.medida}`;grouped[k]=(grouped[k]||0)+Number(it.cantidad||0);});
- let html='<table class="proTable"><tr><th>Sistema</th><th>Material</th><th>Medida</th><th>Cantidad</th></tr>';
- Object.entries(grouped).forEach(([k,v])=>{let p=k.split(' | ');html+=`<tr><td>${p[0]}</td><td>${p[1]}</td><td>${p[2]}</td><td>${v}</td></tr>`;});
- html+='</table>';
- $('stockTable').innerHTML=html;
-}
-function exportStockCSV(){
- let rows=[['KAYN ANDAMIOS - Inventario asistido'],['Sistema','Material','Medida','Cantidad','Ubicación','Nota']];
- stockItems.forEach(i=>rows.push([i.sistema,i.material,i.medida,i.cantidad,i.ubicacion,i.nota]));
- let csv=rows.map(r=>r.map(c=>`"${String(c).replaceAll('"','""')}"`).join(';')).join('\n');
- let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='inventario-kayn.csv';a.click();
-}
-function addStockToDespiece(){
- stockItems.forEach(i=>{let k=`Stock ${i.sistema} - ${i.material} ${i.medida}`; countedPhotoPieces[k]=(countedPhotoPieces[k]||0)+Number(i.cantidad||0);});
- renderBreakdown(); renderPedido(); alert('Inventario añadido como líneas al despiece/pedido.');
-}
 
-function fields(){return ['obraNombre','cliente','direccion','sistema','largoA','largoB','alto','anchoAndamio','altoNivel','precio','esquinaL','doble','torreCarga','medioArranque','malla','rodapies','barrasInterior','cierresLaterales','marcosPaso','marcosPasoLado','marcosPasoInicio','marcosPasoCant','alturaLibreNecesaria','alturaHusillo','verticalMode','v050','v100','v150','v200','v300','huecoEsquina','accesoLado','accesoModulo','tipoAcceso','amarresManual','abrazGiratorias','abrazFijasExtra','tubo050','tubo100','puentesBarandilla','niveladores','adaptadoresExtra','obs']}function collect(){let o={};fields().forEach(id=>{let el=$(id);o[id]=el.type==='checkbox'?el.checked:el.value});return {id:currentId||Date.now().toString(),data:o,mensulas,photos,countedPhotoPieces,stockItems}}function apply(w){currentId=w.id;Object.entries(w.data).forEach(([id,v])=>{let el=$(id);if(el){if(el.type==='checkbox')el.checked=v;else el.value=v}});mensulas=w.mensulas||[];photos=w.photos||[];countedPhotoPieces=w.countedPhotoPieces||{};stockItems=w.stockItems||[];calc();renderPhotos();renderStockTable()}function saveWork(){let arr=JSON.parse(localStorage.kaynWorks||'[]'), w=collect(), i=arr.findIndex(x=>x.id===w.id); if(i>=0)arr[i]=w; else arr.unshift(w); currentId=w.id; localStorage.kaynWorks=JSON.stringify(arr); renderSaved(); alert('Obra guardada')}function renderSaved(){let arr=JSON.parse(localStorage.kaynWorks||'[]'); $('saved').innerHTML='<table><tr><th>Obra</th><th>Cliente</th><th></th></tr>'+arr.map(w=>`<tr><td>${w.data.obraNombre||'Sin nombre'}</td><td>${w.data.cliente||''}</td><td><button class="light" onclick="apply(JSON.parse(localStorage.kaynWorks).find(x=>x.id==='${w.id}'))">Abrir</button></td></tr>`).join('')+'</table>'}function newWork(){currentId=null;mensulas=[];photos=[];countedPhotoPieces={};stockItems=[];fields().forEach(id=>{let el=$(id);if(el&&el.type!=='checkbox'&&!['largoA','alto','anchoAndamio','altoNivel'].includes(id))el.value=''});calc()}setupViewportGestures();updateStockMeasures();try{calc();}catch(e){console.error(e)}renderSaved();renderStockTable();applyView();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function fields(){return ['obraNombre','cliente','direccion','sistema','largoA','largoB','alto','anchoAndamio','altoNivel','precio','esquinaL','doble','torreCarga','medioArranque','malla','rodapies','barrasInterior','cierresLaterales','marcosPaso','marcosPasoLado','marcosPasoInicio','marcosPasoCant','alturaLibreNecesaria','alturaHusillo','verticalMode','v050','v100','v150','v200','v300','huecoEsquina','accesoLado','accesoModulo','tipoAcceso','amarresManual','abrazGiratorias','abrazFijasExtra','tubo050','tubo100','puentesBarandilla','niveladores','adaptadoresExtra','obs']}function collect(){let o={};fields().forEach(id=>{let el=$(id);o[id]=el.type==='checkbox'?el.checked:el.value});return {id:currentId||Date.now().toString(),data:o,mensulas,photos,countedPhotoPieces,stockItems}}function apply(w){currentId=w.id;Object.entries(w.data).forEach(([id,v])=>{let el=$(id);if(el){if(el.type==='checkbox')el.checked=v;else el.value=v}});mensulas=w.mensulas||[];photos=w.photos||[];countedPhotoPieces=w.countedPhotoPieces||{};stockItems=w.stockItems||[];calc();renderPhotos();renderStockTable()}function saveWork(){let arr=JSON.parse(localStorage.kaynWorks||'[]'), w=collect(), i=arr.findIndex(x=>x.id===w.id); if(i>=0)arr[i]=w; else arr.unshift(w); currentId=w.id; localStorage.kaynWorks=JSON.stringify(arr); renderSaved(); alert('Obra guardada')}function renderSaved(){let arr=JSON.parse(localStorage.kaynWorks||'[]'); $('saved').innerHTML='<table><tr><th>Obra</th><th>Cliente</th><th></th></tr>'+arr.map(w=>`<tr><td>${w.data.obraNombre||'Sin nombre'}</td><td>${w.data.cliente||''}</td><td><button class="light" onclick="apply(JSON.parse(localStorage.kaynWorks).find(x=>x.id==='${w.id}'))">Abrir</button></td></tr>`).join('')+'</table>'}function newWork(){currentId=null;mensulas=[];photos=[];countedPhotoPieces={};stockItems=[];fields().forEach(id=>{let el=$(id);if(el&&el.type!=='checkbox'&&!['largoA','alto','anchoAndamio','altoNivel'].includes(id))el.value=''});calc()}setupViewportGestures();try{calc();}catch(e){console.error(e)}renderSaved();applyView();
 </script>
 <script>
 // KAYN_LOGO_ROOT_FALLBACK_V2
