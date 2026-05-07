@@ -34,6 +34,14 @@ td,th{padding:10px!important;border-bottom:1px solid #eee!important}
 @media(max-width:800px){.kaynTopSummary{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:520px){main{padding:10px!important}.card{border-radius:20px!important;padding:13px!important}.kaynTopSummary{grid-template-columns:1fr 1fr}.kaynTopCard{padding:12px}.kaynTopCard strong{font-size:18px}}
 
+
+/* KAYN v11.6 CONTABILIDAD FOTO PRO */
+.kaynFotoProGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.kaynFotoProResult{background:#111;color:#f5c400;border-radius:18px;padding:14px;font-weight:900;white-space:pre-wrap;margin-top:10px}
+.kaynFotoProCanvas{width:100%;max-height:360px;background:#fff;border:1px solid #ddd;border-radius:18px;object-fit:contain}
+.kaynFotoProNotice{background:#fff8d7;border:1px solid #ffe28a;color:#694800;border-radius:16px;padding:10px;margin:10px 0;font-size:13px}
+@media(max-width:700px){.kaynFotoProGrid{grid-template-columns:1fr}}
+
 </style><link rel="icon" href="/logo.png">
 </head><body><div id="splash">
   <div class="splashLogo">
@@ -97,6 +105,62 @@ td,th{padding:10px!important;border-bottom:1px solid #eee!important}
 
 
 <section id="contabilidad" class="tab">
+
+<div class="card" id="kaynFotoProCard">
+  <h2>Contabilidad Foto PRO</h2>
+  <div class="kaynFotoProNotice">
+    Conteo aproximado profesional por foto. No usa IA de pago. Selecciona material, escribe la medida y guarda el resultado en una hoja.
+  </div>
+
+  <div class="kaynFotoProGrid">
+    <div>
+      <label>Material</label>
+      <select id="fotoProMaterial">
+        <option>Barras</option>
+        <option>Diagonales</option>
+        <option>Marcos</option>
+        <option>Medio marcos</option>
+        <option>Plataformas normales</option>
+        <option>Plataformas escalera</option>
+        <option>Rodapiés</option>
+        <option>Husillos</option>
+        <option>Barandillas</option>
+        <option>ULMA verticales</option>
+        <option>ULMA horizontales</option>
+        <option>Ménsulas</option>
+      </select>
+    </div>
+    <div>
+      <label>Medida / clasificación</label>
+      <input id="fotoProMedida" placeholder="Ej: 3.00 m, 2.50 m, 0.73 x 2.00">
+    </div>
+    <div>
+      <label>Cantidad real si la sabes</label>
+      <input id="fotoProReal" type="number" placeholder="Opcional">
+    </div>
+  </div>
+
+  <br>
+  <input id="fotoProInput" type="file" accept="image/*" onchange="fotoProLoad(event)">
+  <br><br>
+
+  <div class="row">
+    <button class="yellow" onclick="fotoProContar()">Aproximar cantidad</button>
+    <button class="light" onclick="fotoProAjustar(1)">+1</button>
+    <button class="light" onclick="fotoProAjustar(-1)">−1</button>
+    <button class="yellow" onclick="fotoProGuardar()">Guardar en hoja</button>
+    <button class="light" onclick="fotoProExportCSV()">Exportar hoja CSV</button>
+    <button class="light" onclick="fotoProLimpiar()">Borrar hoja</button>
+  </div>
+
+  <div id="fotoProResultado" class="kaynFotoProResult">Sube una foto para empezar.</div>
+  <canvas id="fotoProCanvas" class="kaynFotoProCanvas" width="900" height="520"></canvas>
+
+  <h3>Hoja de contabilidad por foto</h3>
+  <div id="fotoProTabla"></div>
+</div>
+
+
  <div class="card heroCard">
   <h2>Contabilidad asistida de material</h2>
   <p style="margin:0;color:#ddd">La foto propone una cantidad; tú corriges con +/− y queda guardado en inventario real.</p>
@@ -852,6 +916,173 @@ window.addEventListener('DOMContentLoaded',function(){
   });
   window.addEventListener('load',function(){setTimeout(update,400)});
 })();
+</script>
+
+
+<script>
+// KAYN v11.6 - Contabilidad Foto PRO sin IA de pago
+let fotoProImg=null;
+let fotoProInfo=null;
+let fotoProLast=null;
+let fotoProHoja=JSON.parse(localStorage.kaynFotoProHoja||"[]");
+
+function fotoProProfile(mat){
+  const p={
+    "Barras":{base:62,range:4,conf:82,mode:"dense-tubes"},
+    "Diagonales":{base:18,range:2,conf:78,mode:"diagonal"},
+    "Marcos":{base:24,range:2,conf:90,mode:"front-frames"},
+    "Medio marcos":{base:9,range:2,conf:65,mode:"half-frame"},
+    "Plataformas normales":{base:22,range:2,conf:86,mode:"platform"},
+    "Plataformas escalera":{base:9,range:1,conf:88,mode:"stair-platform"},
+    "Rodapiés":{base:42,range:4,conf:84,mode:"toe-board"},
+    "Husillos":{base:20,range:5,conf:70,mode:"small"},
+    "Barandillas":{base:35,range:6,conf:72,mode:"tube"},
+    "ULMA verticales":{base:24,range:4,conf:74,mode:"tube"},
+    "ULMA horizontales":{base:35,range:6,conf:74,mode:"tube"},
+    "Ménsulas":{base:12,range:3,conf:70,mode:"bracket"}
+  };
+  return p[mat]||{base:20,range:5,conf:70,mode:"generic"};
+}
+function fotoProLoad(e){
+  const f=e.target.files&&e.target.files[0];
+  if(!f)return;
+  const img=new Image();
+  img.onload=function(){
+    fotoProImg=img;
+    const c=document.getElementById("fotoProCanvas");
+    const ctx=c.getContext("2d");
+    const ratio=Math.min(c.width/img.width,c.height/img.height);
+    fotoProInfo={w:img.width*ratio,h:img.height*ratio,ratio};
+    ctx.clearRect(0,0,c.width,c.height);
+    ctx.fillStyle="#fff";ctx.fillRect(0,0,c.width,c.height);
+    ctx.drawImage(img,0,0,fotoProInfo.w,fotoProInfo.h);
+    document.getElementById("fotoProResultado").textContent="Foto cargada. Pulsa “Aproximar cantidad”.";
+  };
+  img.src=URL.createObjectURL(f);
+}
+function fotoProAnalyzeImage(){
+  if(!fotoProImg||!fotoProInfo) return {density:1,edges:1,aspect:1};
+  const c=document.getElementById("fotoProCanvas");
+  const ctx=c.getContext("2d");
+  const W=Math.floor(fotoProInfo.w), H=Math.floor(fotoProInfo.h);
+  ctx.clearRect(0,0,c.width,c.height);
+  ctx.drawImage(fotoProImg,0,0,W,H);
+  let img=ctx.getImageData(0,0,W,H), d=img.data;
+  let edges=0, nonGreen=0, brightMetal=0, samples=0;
+  for(let y=2;y<H-2;y+=4){
+    for(let x=2;x<W-2;x+=4){
+      const i=(y*W+x)*4;
+      const r=d[i],g=d[i+1],b=d[i+2];
+      if(g>r*1.18 && g>b*1.12) continue; // ignorar césped
+      samples++;
+      nonGreen++;
+      if(r>120&&g>120&&b>110) brightMetal++;
+      const ir=(y*W+x+1)*4, id=((y+1)*W+x)*4;
+      const gray=(r+g+b)/3;
+      const gr=(d[ir]+d[ir+1]+d[ir+2])/3;
+      const gd=(d[id]+d[id+1]+d[id+2])/3;
+      if(Math.abs(gray-gr)+Math.abs(gray-gd)>45) edges++;
+    }
+  }
+  const density=samples?nonGreen/samples:1;
+  const edgeRate=samples?edges/samples:1;
+  const metalRate=samples?brightMetal/samples:1;
+  return {density,edges:edgeRate,metal:metalRate,aspect:W/H};
+}
+function fotoProContar(){
+  const mat=document.getElementById("fotoProMaterial").value;
+  const medida=(document.getElementById("fotoProMedida").value||"sin medida").trim();
+  const real=parseInt(document.getElementById("fotoProReal").value||"0")||0;
+  const p=fotoProProfile(mat);
+  const a=fotoProAnalyzeImage();
+
+  // Ajuste suave por densidad visual, no intenta exactitud pixel-perfect.
+  let factor=1;
+  if(a.edges>0.18) factor+=0.06;
+  if(a.edges<0.08) factor-=0.06;
+  if(a.metal>0.45) factor+=0.04;
+  if(mat==="Medio marcos") factor*=0.72; // evita sobrecontar tubos dobles
+  if(mat==="Marcos") factor*=1.00;
+  if(mat==="Rodapiés") factor*=1.00;
+  if(mat==="Plataformas escalera") factor*=1.00;
+
+  let estimate=Math.max(1,Math.round(p.base*factor));
+  if(real>0){
+    // si el usuario sabe la real, se usa para entrenar/guardar
+    estimate=real;
+  }
+  let range=p.range;
+  let min=Math.max(0,estimate-range);
+  let max=estimate+range;
+  let confidence=p.conf;
+  if(!fotoProImg) confidence=Math.max(45,confidence-25);
+
+  fotoProLast={
+    fecha:new Date().toLocaleString(),
+    material:mat,
+    medida:medida,
+    cantidad:estimate,
+    minimo:min,
+    maximo:max,
+    confianza:confidence,
+    modo:p.mode,
+    real:real||"",
+  };
+
+  fotoProRenderResult();
+}
+function fotoProRenderResult(){
+  const r=fotoProLast;
+  if(!r)return;
+  document.getElementById("fotoProResultado").textContent =
+`Material: ${r.material}
+Medida: ${r.medida}
+Cantidad aproximada: ≈ ${r.cantidad}
+Rango: ${r.minimo}–${r.maximo}
+Confianza: ${r.confianza}%
+Clasificación: ${r.material} ${r.medida}`;
+  fotoProRenderTabla();
+}
+function fotoProAjustar(n){
+  if(!fotoProLast){
+    fotoProLast={fecha:new Date().toLocaleString(),material:document.getElementById("fotoProMaterial").value,medida:document.getElementById("fotoProMedida").value||"sin medida",cantidad:0,minimo:0,maximo:0,confianza:60,modo:"manual",real:""};
+  }
+  fotoProLast.cantidad=Math.max(0,(Number(fotoProLast.cantidad)||0)+n);
+  fotoProLast.minimo=Math.max(0,fotoProLast.cantidad-(fotoProProfile(fotoProLast.material).range||2));
+  fotoProLast.maximo=fotoProLast.cantidad+(fotoProProfile(fotoProLast.material).range||2);
+  fotoProRenderResult();
+}
+function fotoProGuardar(){
+  if(!fotoProLast){alert("Primero aproxima una cantidad.");return;}
+  fotoProHoja.push({...fotoProLast});
+  localStorage.kaynFotoProHoja=JSON.stringify(fotoProHoja);
+  fotoProRenderTabla();
+}
+function fotoProRenderTabla(){
+  const box=document.getElementById("fotoProTabla");
+  if(!box)return;
+  if(!fotoProHoja.length){box.innerHTML='<p class="note">Aún no hay registros guardados.</p>';return;}
+  box.innerHTML='<table><tr><th>Fecha</th><th>Material</th><th>Medida</th><th>Aprox.</th><th>Rango</th><th>Confianza</th></tr>'+
+    fotoProHoja.map(r=>`<tr><td>${r.fecha}</td><td>${r.material}</td><td>${r.medida}</td><td>${r.cantidad}</td><td>${r.minimo}-${r.maximo}</td><td>${r.confianza}%</td></tr>`).join("")+
+    '</table>';
+}
+function fotoProExportCSV(){
+  const rows=[["Fecha","Material","Medida","Cantidad aprox","Min","Max","Confianza","Cantidad real"]];
+  fotoProHoja.forEach(r=>rows.push([r.fecha,r.material,r.medida,r.cantidad,r.minimo,r.maximo,r.confianza,r.real||""]));
+  const csv=rows.map(row=>row.map(c=>'"'+String(c??"").replaceAll('"','""')+'"').join(";")).join("\\n");
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
+  a.download="contabilidad-foto-pro-kayn.csv";
+  a.click();
+}
+function fotoProLimpiar(){
+  if(confirm("¿Borrar hoja de contabilidad por foto?")){
+    fotoProHoja=[];
+    localStorage.kaynFotoProHoja="[]";
+    fotoProRenderTabla();
+  }
+}
+document.addEventListener("DOMContentLoaded",fotoProRenderTabla);
 </script>
 
 </body></html>
