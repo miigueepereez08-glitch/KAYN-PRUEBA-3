@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>KAYN · Vista 3D Real + PDF</title>
+<title>KAYN · Vista 3D Unificada + PDF</title>
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#f5c400">
 <style>
@@ -32,8 +32,48 @@ label{font-size:12px;color:#555;font-weight:800;display:block;margin-bottom:3px}
 </style>
 </head>
 <body>
-<header><div class="brand"><img src="/logo.png" onerror="this.src='/icon-192.png'"><div><h1>KAYN · Vista 3D Real + PDF</h1><div class="sub">Módulos 3D reales detallados desde el Editor PRO</div></div></div></header>
+<header><div class="brand"><img src="/logo.png" onerror="this.src='/icon-192.png'"><div><h1>KAYN · Vista 3D Unificada + PDF</h1><div class="sub">Módulos 3D reales detallados desde el Editor PRO</div></div></div></header>
 <main>
+
+<div class="card">
+  <h2>Generador 3D unificado</h2>
+  <p class="note">Elige cómo quieres generar el montaje: desde los módulos del Editor PRO o por medidas generales.</p>
+
+  <div class="grid">
+    <div>
+      <label>Modo</label>
+      <select id="genMode">
+        <option value="editor">Por módulos del Editor PRO</option>
+        <option value="medidas">Por largo × ancho × alto</option>
+      </select>
+    </div>
+    <div>
+      <label>Calidad visual</label>
+      <select id="qualityMode" onchange="setQualityMode()">
+        <option value="ligero">Ligero</option>
+        <option value="detallado" selected>Detallado</option>
+        <option value="ultra">Ultra detallado</option>
+      </select>
+    </div>
+    <div>
+      <label>Sistema</label>
+      <select id="autoSistema">
+        <option>Europeo</option>
+        <option>ULMA</option>
+      </select>
+    </div>
+    <div><label>Largo total (m)</label><input id="autoLargo" type="number" value="12" step="0.01"></div>
+    <div><label>Ancho (m)</label><input id="autoAncho" type="number" value="0.73" step="0.01"></div>
+    <div><label>Alto (m)</label><input id="autoAlto" type="number" value="6" step="0.01"></div>
+    <div><label>Medida módulo (m)</label><input id="autoModulo" type="number" value="3" step="0.01"></div>
+  </div>
+  <br>
+  <div class="row">
+    <button class="yellow" onclick="generateUnified3D()">Generar 3D</button>
+    <button class="light" onclick="loadModules()">Cargar módulos guardados</button>
+  </div>
+</div>
+
 
 <div class="card">
   <h2>Sistema 3D unificado</h2>
@@ -93,7 +133,7 @@ label{font-size:12px;color:#555;font-weight:800;display:block;margin-bottom:3px}
   <br>
 
   <div class="row">
-    <button class="yellow" onclick="generateAutoStructure()">Generar automáticamente</button>
+    <button class="yellow" onclick="generateUnified3D()">Generar automáticamente</button>
     <button class="light" onclick="loadModules()">Cargar desde Editor PRO</button>
   </div>
 </div>
@@ -110,7 +150,7 @@ label{font-size:12px;color:#555;font-weight:800;display:block;margin-bottom:3px}
   <div class="row">
     <a href="./index.html" style="font-weight:bold;color:#111;align-self:center">← Volver a la app</a>
     <a href="./editor-modulos.html" style="font-weight:bold;color:#111;align-self:center">Editar módulos</a>
-    <button class="yellow" onclick="loadModules()">Actualizar desde editor</button>
+    <button class="yellow" onclick="loadModules()">Cargar desde editor</button>
     <button class="light" onclick="setView('front')">Frontal</button>
     <button class="light" onclick="setView('side')">Lateral</button>
     <button class="light" onclick="setView('top')">Planta</button>
@@ -129,8 +169,8 @@ label{font-size:12px;color:#555;font-weight:800;display:block;margin-bottom:3px}
 <div id="viewWrap"><canvas id="view" width="1400" height="850"></canvas></div>
 
 <div class="card">
-  <h2>Despiece automático desde editor</h2>
-  <p class="note">Calculado con los módulos guardados en el Editor PRO. Es orientativo y sirve para pedido/almacén.</p>
+  <h2>Despiece técnico generado</h2>
+  <p class="note">El material se calcula desde el 3D generado o desde los módulos guardados. Este resultado también se consulta desde el apartado Despiece.</p>
   <div id="breakdownBox"></div>
 </div>
 </main>
@@ -477,42 +517,7 @@ ${rows.map(r=>`<tr><td>${escapeHTML(r[0])}</td><td>${r[1]}</td></tr>`).join('')}
 Documento generado automáticamente por KAYN ANDAMIOS PRO. El despiece es orientativo y debe revisarse según manual del fabricante, normativa aplicable, cargas, amarres y condiciones reales de obra.
 </div>
 
-<script>
-function generateAutoStructure(){
-  const mode=document.getElementById('genMode')?.value||'editor';
-  if(mode==='editor'){
-    loadModules();
-    return;
-  }
 
-  const largo=parseFloat(document.getElementById('autoLargo')?.value||12);
-  const ancho=parseFloat(document.getElementById('autoAncho')?.value||0.73);
-  const alto=parseFloat(document.getElementById('autoAlto')?.value||6);
-  const modulo=parseFloat(document.getElementById('autoModulo')?.value||3);
-  const sistema=document.getElementById('autoSistema')?.value||'Europeo';
-
-  const niveles=Math.max(1,Math.round(alto/2));
-  const cantidad=Math.max(1,Math.ceil(largo/modulo));
-
-  modules=[];
-
-  for(let i=0;i<cantidad;i++){
-    modules.push({
-      id:Date.now()+Math.random()+i,
-      x:i*modulo,
-      y:0,
-      largo:modulo,
-      ancho:ancho,
-      niveles:niveles,
-      sistema:sistema,
-      paso:false
-    });
-  }
-
-  calcBreakdown();
-  draw();
-}
-</script>
 
 </body>
 </html>`;
@@ -524,16 +529,21 @@ function generateAutoStructure(){
   w.document.close();
 }
 
-</script>
 
-<script>
-function generateAutoStructure(){
+function setQualityMode(){
+  const q=document.getElementById('qualityMode')?.value||'detallado';
+  realMode = q !== 'ligero';
+  // ultra usa más zoom/detalle visual sin duplicar motor
+  const b=document.getElementById('realBtn');
+  if(b) b.textContent = q==='ligero' ? 'Modo ligero' : (q==='ultra' ? 'Modo ultra detallado' : 'Modo detallado');
+  draw();
+}
+function generateUnified3D(){
   const mode=document.getElementById('genMode')?.value||'editor';
   if(mode==='editor'){
     loadModules();
     return;
   }
-
   const largo=parseFloat(document.getElementById('autoLargo')?.value||12);
   const ancho=parseFloat(document.getElementById('autoAncho')?.value||0.73);
   const alto=parseFloat(document.getElementById('autoAlto')?.value||6);
@@ -542,26 +552,28 @@ function generateAutoStructure(){
 
   const niveles=Math.max(1,Math.round(alto/2));
   const cantidad=Math.max(1,Math.ceil(largo/modulo));
-
   modules=[];
-
   for(let i=0;i<cantidad;i++){
+    const restante=largo-(i*modulo);
+    const largoModulo=Math.min(modulo, Math.max(0.5, restante));
     modules.push({
       id:Date.now()+Math.random()+i,
       x:i*modulo,
       y:0,
-      largo:modulo,
+      largo:largoModulo,
       ancho:ancho,
       niveles:niveles,
       sistema:sistema,
       paso:false
     });
   }
-
   calcBreakdown();
   draw();
 }
+
 </script>
+
+
 
 </body>
 </html>

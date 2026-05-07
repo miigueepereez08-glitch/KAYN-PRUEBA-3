@@ -42,6 +42,18 @@ td,th{padding:10px!important;border-bottom:1px solid #eee!important}
 .kaynFotoProNotice{background:#fff8d7;border:1px solid #ffe28a;color:#694800;border-radius:16px;padding:10px;margin:10px 0;font-size:13px}
 @media(max-width:700px){.kaynFotoProGrid{grid-template-columns:1fr}}
 
+
+/* KAYN v12.5 FUSION PLANOS */
+.kaynPlanosHub{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:14px}
+.kaynPlanosTool{background:linear-gradient(135deg,#111,#252525);border:1px solid #333;border-radius:22px;padding:14px;color:#fff;box-shadow:0 10px 26px rgba(0,0,0,.20)}
+.kaynPlanosTool h3{margin:0 0 6px 0;color:#f5c400;font-size:18px}
+.kaynPlanosTool p{margin:0 0 12px 0;color:#ddd;font-size:13px;line-height:1.35}
+.kaynPlanosTool a{display:inline-block;background:linear-gradient(135deg,#f5c400,#ffe06a);color:#000;font-weight:900;padding:10px 12px;border-radius:14px;text-decoration:none}
+.kaynPlanosTool.secondary a{background:#fff;color:#111}
+.kaynPlanosLegend{background:#fff8d7;border:1px solid #ffe28a;color:#694800;border-radius:18px;padding:10px 12px;font-size:13px;margin-bottom:14px}
+.kaynOldPlanoBadge{display:inline-block;background:#111;color:#f5c400;border-radius:999px;padding:5px 9px;font-size:12px;font-weight:900;margin-bottom:8px}
+@media(max-width:800px){.kaynPlanosHub{grid-template-columns:1fr}}
+
 </style><link rel="icon" href="/logo.png">
 </head><body><div id="splash">
   <div class="splashLogo">
@@ -81,13 +93,37 @@ td,th{padding:10px!important;border-bottom:1px solid #eee!important}
 <div class="card"><h2>Accesorios manuales</h2><div class="grid3"><div><label>Amarres manuales</label><input id="amarresManual" type="number" value="0"></div><div><label>Abrazaderas giratorias</label><input id="abrazGiratorias" type="number" value="0"></div><div><label>Abrazaderas fijas extra</label><input id="abrazFijasExtra" type="number" value="0"></div><div><label>Tubos lisos 0,50 m</label><input id="tubo050" type="number" value="0"></div><div><label>Tubos lisos 1,00 m</label><input id="tubo100" type="number" value="0"></div><div><label>Puentes barandilla</label><input id="puentesBarandilla" type="number" value="0"></div><div><label>Niveladores marco europeo</label><input id="niveladores" type="number" value="0"></div><div><label>Adaptadores espiga extra</label><input id="adaptadoresExtra" type="number" value="0"></div></div><label style="margin-top:10px">Observaciones</label><textarea id="obs" placeholder="Notas de obra"></textarea><div class="row" style="margin-top:12px"><button class="yellow" onclick="safeCalc()">Calcular / actualizar</button></div><div id="errorBox" class="note" style="color:#b00000;margin-top:8px"></div></div><div class="card"><h2>Resultado rápido</h2><div id="resumen" class="grid"></div></div></section>
 <section id="plano" class="tab"><div class="card"><h2>Planos y visualización</h2><p class="note">Todo el diseño y visualización 2D/3D se gestiona aquí. El cálculo de material está en el apartado Despiece.</p></div>
 
+<div class="kaynPlanosLegend">
+  <b>Planos unificado:</b> se conserva el plano rápido clásico porque tiene accesos, plataformas de escalera y diagonales claras; además se conecta con Editor Módulos PRO y Vista 3D Unificada.
+</div>
+
+<div class="kaynPlanosHub">
+  <div class="kaynPlanosTool">
+    <h3>Plano rápido clásico</h3>
+    <p>Usa el plano actual para ver accesos, plataformas de escalera, diagonales y montaje rápido.</p>
+    <a href="#planoMontajeRapido">Usar plano rápido</a>
+  </div>
+  <div class="kaynPlanosTool">
+    <h3>Editor Módulos PRO</h3>
+    <p>Mueve módulos, usa snap magnético, marca marcos de paso y prepara la estructura.</p>
+    <a href="/editor-modulos.html">Abrir editor</a>
+  </div>
+  <div class="kaynPlanosTool">
+    <h3>Vista 3D Unificada</h3>
+    <p>Genera por módulos o por largo × ancho × alto con calidad Ligero, Detallado o Ultra.</p>
+    <a href="/vista-3d.html">Abrir 3D</a>
+  </div>
+</div>
+
+
+
 <div class="card noPrint"><h2>Plano de montaje</h2><div class="row"><button class="yellow" onclick="draw2D()">Plano 2D detallado</button><button onclick="draw3D()">3D girable</button><button onclick="drawRealista()">Vista realista</button><button class="light" onclick="resetView()">Centrar / reset zoom</button><button class="light" onclick="downloadSVG()">Descargar SVG</button></div>
   <div class="viewControls">
     <button class="light" onclick="zoomBy(1.2)">Zoom +</button>
     <button class="light" onclick="zoomBy(0.85)">Zoom -</button>
     <span class="pill">2D: arrastra para mover · pinza para zoom</span>
     <span class="pill">3D: arrastra para girar · pinza para zoom</span>
-  </div><p class="note">Plano orientativo. No sustituye proyecto técnico ni manual del fabricante.</p></div><div id="planBox" style="min-height:520px"><div id="zoomBadge" class="zoomBadge">100%</div><svg id="svg" width="1000" height="720"></svg><canvas id="canvas3d" width="1000" height="720" style="display:none"></canvas><canvas id="canvasReal" width="1000" height="720" style="display:none"></canvas></div><p class="viewportHint">Consejo: en plano 2D puedes arrastrar para mover y pellizcar para acercar. En 3D, arrastra para girar y pellizca para acercar.</p></section><section id="despiece" class="tab"><div class="card"><h2>Despiece</h2><div id="despieceBox"></div></div></section><section id="pedido" class="tab"><div class="card"><h2>Hoja de pedido</h2><div class="row noPrint"><button class="yellow" onclick="downloadCSV()">Exportar pedido CSV</button><button class="light" onclick="exportPedidoExcel()">Exportar pedido Excel</button><button class="light" onclick="printPedido()">Imprimir / PDF pedido</button></div><div id="pedidoBox"></div></div></section><section id="fotos" class="tab">
+  </div><p class="note">Plano rápido orientativo. Se conserva para accesos, plataformas de escalera, diagonales y vista de montaje. No sustituye proyecto técnico ni manual del fabricante.</p></div><div id="planBox" style="min-height:520px"><div id="zoomBadge" class="zoomBadge">100%</div><svg id="svg" width="1000" height="720"></svg><canvas id="canvas3d" width="1000" height="720" style="display:none"></canvas><canvas id="canvasReal" width="1000" height="720" style="display:none"></canvas></div><p class="viewportHint">Consejo: en plano 2D puedes arrastrar para mover y pellizcar para acercar. En 3D, arrastra para girar y pellizca para acercar.</p></section><section id="despiece" class="tab"><div class="card"><h2>Despiece</h2><div id="despieceBox"></div></div></section><section id="pedido" class="tab"><div class="card"><h2>Hoja de pedido</h2><div class="row noPrint"><button class="yellow" onclick="downloadCSV()">Exportar pedido CSV</button><button class="light" onclick="exportPedidoExcel()">Exportar pedido Excel</button><button class="light" onclick="printPedido()">Imprimir / PDF pedido</button></div><div id="pedidoBox"></div></div></section><section id="fotos" class="tab">
 
 <div class="card">
   <h2>Conteo de material</h2>
