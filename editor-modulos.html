@@ -24,7 +24,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:8px;borde
 </style>
 </head>
 <body>
-<header><div class="logo"><img src="/logo.png" onerror="this.src='/icon-192.png'"><div><h1>KAYN · Editor módulos 2D · Snap magnético</h1><div class="sub">Mover módulos con el dedo · zoom · guardar</div></div></div></header>
+<header><div class="logo"><img src="/logo.png" onerror="this.src='/icon-192.png'"><div><h1>KAYN · Editor módulos 2D · Snap magnético</h1><div class="sub">Mover módulos · marco de paso · zoom · guardar</div></div></div></header>
 <main>
 <div class="card"><div class="row"><a href="./index.html" style="font-weight:bold;color:#111">← Volver a la app</a></div></div>
 <div class="card">
@@ -33,23 +33,23 @@ table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:8px;borde
 <div><label>Sistema</label><select id="sistema"><option>Europeo</option><option>ULMA</option></select></div>
 <div><label>Medida</label><select id="medida"><option value="0.73">0.73 m</option><option value="1.00">1.00 m</option><option value="1.50">1.50 m</option><option value="2.00">2.00 m</option><option value="2.50">2.50 m</option><option value="3.00" selected>3.00 m</option></select></div>
 <div><label>Ancho</label><select id="ancho"><option value="0.70">0.70 m</option><option value="0.73">0.73 m</option><option value="1.00">1.00 m</option><option value="1.50">1.50 m</option></select></div>
-<div><label>Niveles</label><input id="niveles" type="number" value="3" min="1" max="20"></div>
+<div><label>Niveles</label><input id="niveles" type="number" value="3" min="1" max="20"></div><div><label>Tipo</label><select id="marcoPaso"><option value="normal">Normal</option><option value="paso">Marco de paso</option></select></div>
 </div><br>
 <div class="row">
 <button class="yellow" onclick="addModule()">Añadir</button>
 <button class="light" onclick="duplicateSelected()">Duplicar</button>
-<button class="light" onclick="deleteSelected()">Eliminar</button>
+<button class="light" onclick="deleteSelected()">Eliminar</button><button class="light" onclick="togglePasoSelected()">Marcar paso</button>
 <button class="light" onclick="alignSelected()">Alinear</button><button class="light" onclick="toggleMagnet()" id="magnetBtn">Imán ON</button>
 <button class="yellow" onclick="saveProject()">Guardar</button>
 <button class="light" onclick="loadProject()">Cargar</button>
-<button class="light" onclick="clearProject()">Borrar todo</button><a href="/vista-3d.html" style="display:inline-block;padding:10px 14px;border-radius:13px;background:linear-gradient(135deg,#f5c400,#ffe06a);color:#000;font-weight:900;text-decoration:none">Vista 3D Real Detallada + Despiece</a>
+<button class="light" onclick="clearProject()">Borrar todo</button><a href="/vista-3d.html" style="display:inline-block;padding:10px 14px;border-radius:13px;background:linear-gradient(135deg,#f5c400,#ffe06a);color:#000;font-weight:900;text-decoration:none">Vista 3D Real + Despiece + PDF</a>
 </div>
 <p class="note">Arrastra módulos. Usa pellizco o rueda para zoom. El imán pega módulos automáticamente al acercarlos.</p>
 </div>
 <div id="wrap"><canvas id="stage" width="1400" height="850"></canvas></div>
 
 <div class="card">
-  <h2>Vista 3D Real Detallada + Despiece automático</h2>
+  <h2>Vista 3D Real + Despiece + PDF automático</h2>
   <p class="note">La vista 3D y el despiece forman parte del Editor Módulos PRO.</p>
   <div class="row">
     <a href="/vista-3d.html" style="display:inline-block;padding:12px 16px;border-radius:15px;background:linear-gradient(135deg,#f5c400,#ffe06a);color:#000;font-weight:900;text-decoration:none">Abrir Vista 3D Real</a>
@@ -92,13 +92,13 @@ function drawSnapGuide(){
  ctx.stroke();
  ctx.restore();
 }
-function addModule(){let med=parseFloat(document.getElementById('medida').value),ancho=parseFloat(document.getElementById('ancho').value),niveles=parseInt(document.getElementById('niveles').value||1),sistema=document.getElementById('sistema').value,x=modules.length?modules[modules.length-1].x+modules[modules.length-1].largo:0;modules.push({id:Date.now()+Math.random(),x:snap(x),y:0,largo:med,ancho,niveles,sistema});selected=modules[modules.length-1].id;draw()}
+function addModule(){let med=parseFloat(document.getElementById('medida').value),ancho=parseFloat(document.getElementById('ancho').value),niveles=parseInt(document.getElementById('niveles').value||1),sistema=document.getElementById('sistema').value,paso=(document.getElementById('marcoPaso')&&document.getElementById('marcoPaso').value==='paso'),x=modules.length?modules[modules.length-1].x+modules[modules.length-1].largo:0;modules.push({id:Date.now()+Math.random(),x:snap(x),y:0,largo:med,ancho,niveles,sistema,paso});selected=modules[modules.length-1].id;draw()}
 function duplicateSelected(){let m=modules.find(a=>a.id===selected);if(!m)return;let c={...m,id:Date.now()+Math.random(),x:m.x+m.largo};modules.push(c);selected=c.id;draw()}
-function deleteSelected(){modules=modules.filter(m=>m.id!==selected);selected=null;draw()}function alignSelected(){let m=modules.find(a=>a.id===selected);if(m){m.x=snap(m.x);m.y=snap(m.y);draw()}}
+function deleteSelected(){modules=modules.filter(m=>m.id!==selected);selected=null;draw()}function togglePasoSelected(){let m=modules.find(a=>a.id===selected);if(m){m.paso=!m.paso;draw()}}function alignSelected(){let m=modules.find(a=>a.id===selected);if(m){m.x=snap(m.x);m.y=snap(m.y);draw()}}
 function clearProject(){if(confirm('¿Borrar editor?')){modules=[];selected=null;draw()}}function saveProject(){localStorage.kaynEditorModulos=JSON.stringify({modules,scale,panX,panY});alert('Guardado')}function loadProject(){try{let p=JSON.parse(localStorage.kaynEditorModulos||'{}');modules=p.modules||[];scale=p.scale||1;panX=p.panX||120;panY=p.panY||170;selected=null;draw()}catch(e){}}
 function hitTest(wx,wy){for(let i=modules.length-1;i>=0;i--){let m=modules[i];if(wx>=m.x&&wx<=m.x+m.largo&&wy>=m.y&&wy<=m.y+m.ancho)return m}return null}
 function drawGrid(){ctx.clearRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#fbfbfb';ctx.fillRect(0,0,canvas.width,canvas.height);let step=PX*scale*GRID;ctx.strokeStyle='#e6e6e6';ctx.lineWidth=1;for(let x=panX%step;x<canvas.width;x+=step){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,canvas.height);ctx.stroke()}for(let y=panY%step;y<canvas.height;y+=step){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(canvas.width,y);ctx.stroke()}}
-function drawModule(m){let p=worldToScreen(m.x,m.y),w=m.largo*PX*scale,h=m.ancho*PX*scale,sel=m.id===selected;ctx.fillStyle=sel?'rgba(245,196,0,.28)':'rgba(20,117,255,.12)';ctx.strokeStyle=sel?'#f5c400':(m.sistema==='ULMA'?'#d7aa00':'#1475ff');ctx.lineWidth=sel?4:3;ctx.fillRect(p.x,p.y,w,h);ctx.strokeRect(p.x,p.y,w,h);ctx.strokeStyle='#111';ctx.lineWidth=2;for(let i=0;i<=m.niveles;i++){let yy=p.y+h*(i/Math.max(1,m.niveles));ctx.beginPath();ctx.moveTo(p.x,yy);ctx.lineTo(p.x+w,yy);ctx.stroke()}ctx.strokeStyle=m.sistema==='ULMA'?'#c59a00':'#777';ctx.beginPath();ctx.moveTo(p.x+6,p.y+h-6);ctx.lineTo(p.x+w-6,p.y+6);ctx.stroke();ctx.fillStyle='#111';ctx.font='bold '+Math.max(11,14*scale)+'px Arial';ctx.fillText(m.sistema+' · '+m.largo.toFixed(2)+'m',p.x+8,p.y+18);ctx.font=Math.max(10,12*scale)+'px Arial';ctx.fillText(m.niveles+' niveles',p.x+8,p.y+36)}
+function drawModule(m){let p=worldToScreen(m.x,m.y),w=m.largo*PX*scale,h=m.ancho*PX*scale,sel=m.id===selected;ctx.fillStyle=sel?'rgba(245,196,0,.28)':'rgba(20,117,255,.12)';ctx.strokeStyle=sel?'#f5c400':(m.sistema==='ULMA'?'#d7aa00':'#1475ff');ctx.lineWidth=sel?4:3;ctx.fillRect(p.x,p.y,w,h);ctx.strokeRect(p.x,p.y,w,h);ctx.strokeStyle='#111';ctx.lineWidth=2;for(let i=0;i<=m.niveles;i++){let yy=p.y+h*(i/Math.max(1,m.niveles));ctx.beginPath();ctx.moveTo(p.x,yy);ctx.lineTo(p.x+w,yy);ctx.stroke()}ctx.strokeStyle=m.sistema==='ULMA'?'#c59a00':'#777';ctx.beginPath();ctx.moveTo(p.x+6,p.y+h-6);ctx.lineTo(p.x+w-6,p.y+6);ctx.stroke();ctx.fillStyle='#111';ctx.font='bold '+Math.max(11,14*scale)+'px Arial';ctx.fillText((m.paso?'PASO · ':'')+m.sistema+' · '+m.largo.toFixed(2)+'m',p.x+8,p.y+18);ctx.font=Math.max(10,12*scale)+'px Arial';ctx.fillText(m.niveles+' niveles',p.x+8,p.y+36);if(m.paso){ctx.strokeStyle='#f5c400';ctx.lineWidth=5;ctx.setLineDash([10,6]);ctx.strokeRect(p.x+8,p.y+8,w-16,h-16);ctx.setLineDash([]);}}
 function draw(){drawGrid();modules.forEach(drawModule);drawSnapGuide();renderSummary()}
 function renderSummary(){let total=modules.reduce((a,m)=>a+m.largo,0),area=modules.reduce((a,m)=>a+m.largo*m.ancho*m.niveles,0),ulma=modules.filter(m=>m.sistema==='ULMA').length,eur=modules.filter(m=>m.sistema==='Europeo').length;document.getElementById('summary').innerHTML='<table><tr><th>Módulos</th><th>Largo visual</th><th>Área aprox.</th><th>Europeo</th><th>ULMA</th></tr><tr><td>'+modules.length+'</td><td>'+total.toFixed(2)+' m</td><td>'+area.toFixed(2)+' m²</td><td>'+eur+'</td><td>'+ulma+'</td></tr></table>'}
 function pointerPos(e){let r=canvas.getBoundingClientRect(),t=e.touches?e.touches[0]:e;return{x:(t.clientX-r.left)*(canvas.width/r.width),y:(t.clientY-r.top)*(canvas.height/r.height)}}

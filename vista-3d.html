@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>KAYN · Vista 3D Real Detallada + Despiece</title>
+<title>KAYN · Vista 3D Real + PDF</title>
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#f5c400">
 <style>
@@ -25,11 +25,87 @@ table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:8px;borde
 .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .metric{background:#111;color:#fff;border-radius:18px;padding:12px}.metric b{color:#f5c400;font-size:22px;display:block}
 @media(max-width:720px){.row button,.row a{width:100%}.grid{grid-template-columns:1fr}canvas{height:58vh}}
+
+input{width:100%;border:1px solid #d0d5dd;border-radius:13px;padding:10px;font-size:15px;background:#fff}
+label{font-size:12px;color:#555;font-weight:800;display:block;margin-bottom:3px}
+
 </style>
 </head>
 <body>
-<header><div class="brand"><img src="/logo.png" onerror="this.src='/icon-192.png'"><div><h1>KAYN · Vista 3D Real Detallada + Despiece</h1><div class="sub">Módulos 3D reales detallados desde el Editor PRO</div></div></div></header>
+<header><div class="brand"><img src="/logo.png" onerror="this.src='/icon-192.png'"><div><h1>KAYN · Vista 3D Real + PDF</h1><div class="sub">Módulos 3D reales detallados desde el Editor PRO</div></div></div></header>
 <main>
+
+<div class="card">
+  <h2>Sistema 3D unificado</h2>
+  <p class="note">
+    Puedes trabajar:
+    <br>• por módulos del Editor PRO
+    <br>• por largo × ancho × alto
+  </p>
+
+  <div class="grid">
+    <div>
+      <label>Modo</label>
+      <select id="genMode">
+        <option value="editor">Por módulos</option>
+        <option value="medidas">Por medidas</option>
+      </select>
+    </div>
+
+    <div>
+      <label>Calidad</label>
+      <select id="qualityMode">
+        <option>Ligero</option>
+        <option selected>Detallado</option>
+        <option>Ultra detallado</option>
+      </select>
+    </div>
+
+    <div>
+      <label>Sistema</label>
+      <select id="autoSistema">
+        <option>Europeo</option>
+        <option>ULMA</option>
+      </select>
+    </div>
+
+    <div>
+      <label>Largo total</label>
+      <input id="autoLargo" type="number" value="12">
+    </div>
+
+    <div>
+      <label>Ancho</label>
+      <input id="autoAncho" type="number" value="0.73" step="0.01">
+    </div>
+
+    <div>
+      <label>Alto</label>
+      <input id="autoAlto" type="number" value="6">
+    </div>
+
+    <div>
+      <label>Módulo</label>
+      <input id="autoModulo" type="number" value="3" step="0.01">
+    </div>
+  </div>
+
+  <br>
+
+  <div class="row">
+    <button class="yellow" onclick="generateAutoStructure()">Generar automáticamente</button>
+    <button class="light" onclick="loadModules()">Cargar desde Editor PRO</button>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Datos del informe PDF</h2>
+  <div class="grid">
+    <div><label>Obra</label><input id="pdfObra" placeholder="Nombre de obra"></div>
+    <div><label>Cliente</label><input id="pdfCliente" placeholder="Cliente"></div>
+    <div><label>Observaciones</label><input id="pdfObs" placeholder="Notas del montaje"></div>
+  </div>
+</div>
 <div class="card">
   <div class="row">
     <a href="./index.html" style="font-weight:bold;color:#111;align-self:center">← Volver a la app</a>
@@ -39,9 +115,9 @@ table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:8px;borde
     <button class="light" onclick="setView('side')">Lateral</button>
     <button class="light" onclick="setView('top')">Planta</button>
     <button class="light" onclick="setView('iso')">3D</button>
-    <button class="yellow" onclick="exportCSV()">Exportar despiece CSV</button><button class="yellow" onclick="toggleRealMode()" id="realBtn">Modo 3D detallado ON</button>
+    <button class="yellow" onclick="exportCSV()">Exportar despiece CSV</button><button class="yellow" onclick="openPdfReport()">Generar PDF profesional</button><button class="yellow" onclick="toggleRealMode()" id="realBtn">Modo 3D detallado ON</button>
   </div>
-  <p class="note">Arrastra para girar. Pellizca o rueda para zoom. Esta vista es orientativa y se genera desde los módulos colocados.</p><p class="note"><b>Vista realista:</b> marcos separados, plataformas individuales, diagonales independientes, husillos y detalles visuales.</p>
+  <p class="note">Arrastra para girar. Pellizca o rueda para zoom. Esta vista es orientativa y se genera desde los módulos colocados.</p><p class="note"><b>Marcos de paso:</b> si los marcas en el Editor PRO, se muestran como pórtico con hueco libre central y viga superior reforzada.</p><p class="note"><b>Vista realista:</b> marcos separados, plataformas individuales, diagonales independientes, husillos y detalles visuales.</p>
 </div>
 
 <div class="grid">
@@ -89,6 +165,7 @@ function calcBreakdown(){
     const len=(Number(m.largo)||0).toFixed(2)+' m', levels=Math.max(1,Number(m.niveles)||1), sys=m.sistema||'Europeo';
     addBD('Husillos / bases',2);
     addBD('Tablas o durmientes',2);
+    if(m.paso){ addBD('Marcos de paso / pórtico europeo '+len, 1); }
     if(sys==='ULMA'){
       addBD('Verticales ULMA 2.00 m',2*levels);
       addBD('Horizontales exteriores ULMA '+len,levels*2);
@@ -198,7 +275,7 @@ function box(x,z,l,w,h,color){
   edges.forEach(e=>line(pts[e[0]],pts[e[1]],color,2));
 }
 function drawModule(m){
-  const x=Number(m.x)||0,z=Number(m.y)||0,l=Number(m.largo)||3,w=Number(m.ancho)||0.73,levels=Math.max(1,Number(m.niveles)||1),sys=m.sistema||'Europeo';
+  const x=Number(m.x)||0,z=Number(m.y)||0,l=Number(m.largo)||3,w=Number(m.ancho)||0.73,levels=Math.max(1,Number(m.niveles)||1),sys=m.sistema||'Europeo',isPaso=!!m.paso;
   const isUlma=sys==='ULMA';
   const steel=isUlma?'#8a8a8a':'#5f6670';
   const node=isUlma?'#f5c400':'#2f80ed';
@@ -274,9 +351,22 @@ function drawModule(m){
   ctx.roundRect(P.x-54,P.y-18,108,24,8);
   ctx.fill();ctx.stroke();
   ctx.fillStyle='#111';ctx.font='bold 12px Arial';ctx.textAlign='center';
-  ctx.fillText(sys+' · '+l.toFixed(2)+'m',P.x,P.y-2);
+  ctx.fillText((isPaso?'PASO · ':'')+sys+' · '+l.toFixed(2)+'m',P.x,P.y-2);
   ctx.restore();
 }
+
+function portalBeam(x,y,z,l,color){
+  tube([x,y,z],[x+l,y,z],color,5.5);
+  tube([x,y+0.22,z],[x+l,y+0.22,z],color,4);
+  for(let k=1;k<5;k++){const xx=x+l*k/5;tube([xx,y,z],[xx,y+0.22,z],color,2.2);}
+}
+function drawPasoMarker(x,y,z,l,w){
+  const P=project([x+l/2,y,z+w/2]);
+  ctx.save();ctx.fillStyle='rgba(245,196,0,.95)';ctx.strokeStyle='#111';ctx.lineWidth=1;
+  ctx.beginPath();ctx.roundRect(P.x-46,P.y-16,92,24,8);ctx.fill();ctx.stroke();
+  ctx.fillStyle='#111';ctx.font='bold 11px Arial';ctx.textAlign='center';ctx.fillText('MARCO PASO',P.x,P.y);ctx.restore();
+}
+
 function drawGround(){
   ctx.strokeStyle='#ddd';ctx.lineWidth=1;
   for(let i=-20;i<=20;i++){line([i,0,-8],[i,0,12],'#e1e1e1',1);line([-8,0,i],[18,0,i],'#e1e1e1',1)}
@@ -295,6 +385,183 @@ canvas.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.max(25,Math.min
 canvas.addEventListener('touchmove',e=>{if(e.touches.length===2){e.preventDefault();let a=e.touches[0],b=e.touches[1],d=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);if(!pinch)pinch={d,zoom};zoom=Math.max(25,Math.min(180,pinch.zoom*(d/pinch.d)));draw()}},{passive:false});
 canvas.addEventListener('touchend',()=>{pinch=null},{passive:true});
 loadModules();
+
+function getCanvasImage(){
+  try{return canvas.toDataURL('image/png')}catch(e){return ''}
+}
+function escapeHTML(s){
+  return String(s||'').replace(/[&<>"']/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]})
+}
+function openPdfReport(){
+  calcBreakdown();
+  draw();
+  const obra=document.getElementById('pdfObra')?.value||'';
+  const cliente=document.getElementById('pdfCliente')?.value||'';
+  const obs=document.getElementById('pdfObs')?.value||'';
+  const rows=Object.entries(breakdown).sort((a,b)=>a[0].localeCompare(b[0]));
+  const totalPiezas=rows.reduce((a,r)=>a+r[1],0);
+  const area=modules.reduce((a,m)=>a+(Number(m.largo)||0)*(Number(m.ancho)||0)*(Number(m.niveles)||1),0).toFixed(2);
+  const img=getCanvasImage();
+  const fecha=new Date().toLocaleString();
+
+  const htmlReport=`<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>KAYN Informe PDF</title>
+<style>
+@page{size:A4;margin:12mm}
+body{font-family:Arial,Helvetica,sans-serif;margin:0;color:#111;background:#fff}
+.header{display:flex;align-items:center;justify-content:space-between;border-bottom:4px solid #f5c400;padding-bottom:12px;margin-bottom:14px}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{width:62px;height:62px;object-fit:contain;background:#000;border-radius:14px;padding:5px}
+h1{margin:0;color:#111;font-size:24px}
+.sub{color:#555;font-size:12px;margin-top:4px}
+.badge{background:#111;color:#f5c400;border-radius:999px;padding:8px 12px;font-weight:bold}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0}
+.card{border:1px solid #ddd;border-radius:14px;padding:10px;background:#fafafa}
+.card b{display:block;color:#111;font-size:18px}
+.card span{font-size:12px;color:#666}
+.meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.meta div{border:1px solid #e2e2e2;border-radius:12px;padding:8px}
+.view{width:100%;max-height:360px;object-fit:contain;border:1px solid #ddd;border-radius:14px;background:#f9f9f9}
+table{width:100%;border-collapse:collapse;margin-top:12px;font-size:12px}
+th{background:#111;color:#f5c400;text-align:left}
+td,th{padding:7px;border-bottom:1px solid #e8e8e8}
+.note{font-size:11px;color:#666;margin-top:14px;border-top:1px solid #ddd;padding-top:10px}
+.obs{white-space:pre-wrap}
+.noPrint{margin:12px 0}
+button{background:#f5c400;border:0;border-radius:10px;padding:10px 14px;font-weight:bold}
+@media print{.noPrint{display:none}}
+</style>
+</head>
+<body>
+<div class="noPrint"><button onclick="window.print()">Guardar / imprimir PDF</button></div>
+<div class="header">
+  <div class="brand">
+    <img class="logo" src="/logo.png">
+    <div>
+      <h1>KAYN ANDAMIOS PRO</h1>
+      <div class="sub">Informe profesional de montaje, vista 3D y despiece</div>
+    </div>
+  </div>
+  <div class="badge">PDF PRO</div>
+</div>
+
+<div class="meta">
+  <div><b>Obra:</b> ${escapeHTML(obra||'Sin especificar')}</div>
+  <div><b>Cliente:</b> ${escapeHTML(cliente||'Sin especificar')}</div>
+  <div><b>Fecha:</b> ${escapeHTML(fecha)}</div>
+  <div><b>Origen:</b> Editor Módulos PRO</div>
+</div>
+
+<div class="grid">
+  <div class="card"><b>${modules.length}</b><span>Módulos</span></div>
+  <div class="card"><b>${area} m²</b><span>Superficie aproximada</span></div>
+  <div class="card"><b>${totalPiezas}</b><span>Piezas estimadas</span></div>
+</div>
+
+<h2>Vista 3D del montaje</h2>
+<img class="view" src="${img}">
+
+<h2>Despiece automático</h2>
+<table>
+<tr><th>Pieza</th><th>Cantidad</th></tr>
+${rows.map(r=>`<tr><td>${escapeHTML(r[0])}</td><td>${r[1]}</td></tr>`).join('')}
+</table>
+
+<h2>Observaciones</h2>
+<div class="card obs">${escapeHTML(obs||'Sin observaciones.')}</div>
+
+<div class="note">
+Documento generado automáticamente por KAYN ANDAMIOS PRO. El despiece es orientativo y debe revisarse según manual del fabricante, normativa aplicable, cargas, amarres y condiciones reales de obra.
+</div>
+
+<script>
+function generateAutoStructure(){
+  const mode=document.getElementById('genMode')?.value||'editor';
+  if(mode==='editor'){
+    loadModules();
+    return;
+  }
+
+  const largo=parseFloat(document.getElementById('autoLargo')?.value||12);
+  const ancho=parseFloat(document.getElementById('autoAncho')?.value||0.73);
+  const alto=parseFloat(document.getElementById('autoAlto')?.value||6);
+  const modulo=parseFloat(document.getElementById('autoModulo')?.value||3);
+  const sistema=document.getElementById('autoSistema')?.value||'Europeo';
+
+  const niveles=Math.max(1,Math.round(alto/2));
+  const cantidad=Math.max(1,Math.ceil(largo/modulo));
+
+  modules=[];
+
+  for(let i=0;i<cantidad;i++){
+    modules.push({
+      id:Date.now()+Math.random()+i,
+      x:i*modulo,
+      y:0,
+      largo:modulo,
+      ancho:ancho,
+      niveles:niveles,
+      sistema:sistema,
+      paso:false
+    });
+  }
+
+  calcBreakdown();
+  draw();
+}
 </script>
+
+</body>
+</html>`;
+
+  const w=window.open('','_blank');
+  if(!w){alert('Permite ventanas emergentes para generar el PDF.');return;}
+  w.document.open();
+  w.document.write(htmlReport);
+  w.document.close();
+}
+
+</script>
+
+<script>
+function generateAutoStructure(){
+  const mode=document.getElementById('genMode')?.value||'editor';
+  if(mode==='editor'){
+    loadModules();
+    return;
+  }
+
+  const largo=parseFloat(document.getElementById('autoLargo')?.value||12);
+  const ancho=parseFloat(document.getElementById('autoAncho')?.value||0.73);
+  const alto=parseFloat(document.getElementById('autoAlto')?.value||6);
+  const modulo=parseFloat(document.getElementById('autoModulo')?.value||3);
+  const sistema=document.getElementById('autoSistema')?.value||'Europeo';
+
+  const niveles=Math.max(1,Math.round(alto/2));
+  const cantidad=Math.max(1,Math.ceil(largo/modulo));
+
+  modules=[];
+
+  for(let i=0;i<cantidad;i++){
+    modules.push({
+      id:Date.now()+Math.random()+i,
+      x:i*modulo,
+      y:0,
+      largo:modulo,
+      ancho:ancho,
+      niveles:niveles,
+      sistema:sistema,
+      paso:false
+    });
+  }
+
+  calcBreakdown();
+  draw();
+}
+</script>
+
 </body>
 </html>
