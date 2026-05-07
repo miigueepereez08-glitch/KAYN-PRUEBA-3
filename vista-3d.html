@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>KAYN · Vista 3D y Despiece</title>
+<title>KAYN · Vista 3D Real Detallada + Despiece</title>
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#f5c400">
 <style>
@@ -28,7 +28,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:8px;borde
 </style>
 </head>
 <body>
-<header><div class="brand"><img src="/logo.png" onerror="this.src='/icon-192.png'"><div><h1>KAYN · Vista 3D y Despiece</h1><div class="sub">Lee los módulos guardados del Editor PRO</div></div></div></header>
+<header><div class="brand"><img src="/logo.png" onerror="this.src='/icon-192.png'"><div><h1>KAYN · Vista 3D Real Detallada + Despiece</h1><div class="sub">Módulos 3D reales detallados desde el Editor PRO</div></div></div></header>
 <main>
 <div class="card">
   <div class="row">
@@ -39,9 +39,9 @@ table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:8px;borde
     <button class="light" onclick="setView('side')">Lateral</button>
     <button class="light" onclick="setView('top')">Planta</button>
     <button class="light" onclick="setView('iso')">3D</button>
-    <button class="yellow" onclick="exportCSV()">Exportar despiece CSV</button>
+    <button class="yellow" onclick="exportCSV()">Exportar despiece CSV</button><button class="yellow" onclick="toggleRealMode()" id="realBtn">Modo 3D detallado ON</button>
   </div>
-  <p class="note">Arrastra para girar. Pellizca o rueda para zoom. Esta vista es orientativa y se genera desde los módulos colocados.</p>
+  <p class="note">Arrastra para girar. Pellizca o rueda para zoom. Esta vista es orientativa y se genera desde los módulos colocados.</p><p class="note"><b>Vista realista:</b> marcos separados, plataformas individuales, diagonales independientes, husillos y detalles visuales.</p>
 </div>
 
 <div class="grid">
@@ -60,6 +60,14 @@ table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:8px;borde
 </main>
 <script>
 const canvas=document.getElementById('view'),ctx=canvas.getContext('2d');
+
+if(!CanvasRenderingContext2D.prototype.roundRect){
+ CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){
+  if(w<2*r)r=w/2;if(h<2*r)r=h/2;
+  this.beginPath();this.moveTo(x+r,y);this.arcTo(x+w,y,x+w,y+h,r);this.arcTo(x+w,y+h,x,y+h,r);this.arcTo(x,y+h,x,y,r);this.arcTo(x,y,x+w,y,r);this.closePath();return this;
+ }
+}
+
 let modules=[],breakdown={},rotX=-0.55,rotY=0.75,zoom=70,panX=canvas.width/2,panY=canvas.height/2+120;
 let dragging=false,last=null,pinch=null;
 const LEVEL_H=2.0;
@@ -130,9 +138,59 @@ function project(p){
   const scale=zoom/(1+z2*0.025);
   return {x:panX+x1*scale,y:panY-y1*scale,d:z2};
 }
-function line(a,b,color='#111',w=2){
-  const A=project(a),B=project(b);ctx.strokeStyle=color;ctx.lineWidth=w;ctx.beginPath();ctx.moveTo(A.x,A.y);ctx.lineTo(B.x,B.y);ctx.stroke();
+let realMode=true;
+function toggleRealMode(){realMode=!realMode;const b=document.getElementById('realBtn');if(b)b.textContent=realMode?'Modo 3D detallado ON':'Modo 3D realista OFF';draw();}
+function depthColor(color, d){
+  // mantiene colores básicos pero simula profundidad con transparencia/sombra
+  return color;
 }
+function line(a,b,color='#111',w=2){
+  const A=project(a),B=project(b);
+  ctx.save();
+  ctx.strokeStyle=color;
+  ctx.lineWidth=w;
+  ctx.lineCap='round';
+  ctx.shadowColor='rgba(0,0,0,.18)';
+  ctx.shadowBlur=realMode?2:0;
+  ctx.beginPath();ctx.moveTo(A.x,A.y);ctx.lineTo(B.x,B.y);ctx.stroke();
+  if(realMode && w>=3){
+    ctx.strokeStyle='rgba(255,255,255,.35)';
+    ctx.lineWidth=Math.max(1,w*.28);
+    ctx.beginPath();ctx.moveTo(A.x,A.y-1);ctx.lineTo(B.x,B.y-1);ctx.stroke();
+  }
+  ctx.restore();
+}
+function panel(points, fill, stroke='#444'){
+  const P=points.map(project);
+  ctx.save();
+  ctx.fillStyle=fill;
+  ctx.strokeStyle=stroke;
+  ctx.lineWidth=1.5;
+  ctx.beginPath();
+  ctx.moveTo(P[0].x,P[0].y);
+  for(let i=1;i<P.length;i++)ctx.lineTo(P[i].x,P[i].y);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+}
+function tube(a,b,color,w=4){line(a,b,color,w)}
+function platformPanel(x,y,z,l,w,matColor){
+  panel([[x,y,z],[x+l,y,z],[x+l,y,z+w],[x,y,z+w]], matColor, '#666');
+  // lamas visuales
+  for(let k=1;k<4;k++){
+    const zz=z+(w*k/4);
+    line([x,y+0.015,zz],[x+l,y+0.015,zz],'rgba(80,80,80,.45)',1);
+  }
+}
+function toeBoard(x,y,z,l,color){
+  panel([[x,y,z],[x+l,y,z],[x+l,y+0.22,z],[x,y+0.22,z]], color, '#6b1212');
+}
+function guardRail(x,y,z,l,color){
+  tube([x,y,z],[x+l,y,z],color,3.2);
+  tube([x,y+0.42,z],[x+l,y+0.42,z],color,3.2);
+}
+
 function box(x,z,l,w,h,color){
   // base platform rectangle at each height drawn with edges
   const pts=[[x,0,z],[x+l,0,z],[x+l,0,z+w],[x,0,z+w],[x,h,z],[x+l,h,z],[x+l,h,z+w],[x,h,z+w]];
@@ -141,27 +199,83 @@ function box(x,z,l,w,h,color){
 }
 function drawModule(m){
   const x=Number(m.x)||0,z=Number(m.y)||0,l=Number(m.largo)||3,w=Number(m.ancho)||0.73,levels=Math.max(1,Number(m.niveles)||1),sys=m.sistema||'Europeo';
-  const col=sys==='ULMA'?'#d0a000':'#505050', diag=sys==='ULMA'?'#f5c400':'#777', plat='#b7b7b7', rod=sys==='ULMA'?'#f5c400':'#b12a2a';
+  const isUlma=sys==='ULMA';
+  const steel=isUlma?'#8a8a8a':'#5f6670';
+  const node=isUlma?'#f5c400':'#2f80ed';
+  const diag=isUlma?'#f5c400':'#777';
+  const plat=isUlma?'rgba(170,170,160,.82)':'rgba(180,180,175,.82)';
+  const rod=isUlma?'#f5c400':'#b12a2a';
+  const rail=isUlma?'#8a8a8a':'#555';
   const H=levels*LEVEL_H;
-  // verticals
-  [[x,z],[x+l,z],[x,z+w],[x+l,z+w]].forEach(p=>line([p[0],0,p[1]],[p[0],H,p[1]],col,3));
+
+  // postes verticales principales
+  [[x,z],[x+l,z],[x,z+w],[x+l,z+w]].forEach(p=>{
+    tube([p[0],0,p[1]],[p[0],H,p[1]],steel,5);
+    // nudos/discos ULMA o uniones marco
+    for(let j=0;j<=levels;j++){
+      const y=j*LEVEL_H;
+      const P=project([p[0],y,p[1]]);
+      ctx.save();ctx.fillStyle=node;ctx.beginPath();ctx.arc(P.x,P.y,realMode?4:2.5,0,Math.PI*2);ctx.fill();ctx.restore();
+    }
+  });
+
+  // niveles
   for(let j=0;j<=levels;j++){
     const y=j*LEVEL_H;
-    // horizontals front/back and sides
-    line([x,y,z],[x+l,y,z],col,2.2); line([x,y,z+w],[x+l,y,z+w],col,2.2);
-    line([x,y,z],[x,y,z+w],col,1.5); line([x+l,y,z],[x+l,y,z+w],col,1.5);
+    // horizontales estructurales frente/fondo/laterales
+    tube([x,y,z],[x+l,y,z],steel,3.5);
+    tube([x,y,z+w],[x+l,y,z+w],steel,3.5);
+    tube([x,y,z],[x,y,z+w],steel,2.8);
+    tube([x+l,y,z],[x+l,y,z+w],steel,2.8);
+
     if(j<levels){
-      // platform
-      line([x,y+0.08,z+w*0.15],[x+l,y+0.08,z+w*0.15],plat,5);
-      line([x,y+0.08,z+w*0.85],[x+l,y+0.08,z+w*0.85],plat,5);
-      // rodapie front
-      line([x,y+0.22,z],[x+l,y+0.22,z],rod,3);
+      const floorY=y+0.08;
+      // plataforma/chapa completa
+      if(realMode) platformPanel(x,floorY,z+0.06,l,w-0.12,plat);
+      else {
+        line([x,floorY,z+w*0.15],[x+l,floorY,z+w*0.15],'#b7b7b7',5);
+        line([x,floorY,z+w*0.85],[x+l,floorY,z+w*0.85],'#b7b7b7',5);
+      }
+
+      // rodapiés frontal y fondo
+      if(realMode){
+        toeBoard(x,y+0.18,z,l,rod);
+        toeBoard(x,y+0.18,z+w,l,rod);
+      }else{
+        line([x,y+0.22,z],[x+l,y+0.22,z],rod,3);
+      }
+
+      // barandillas exteriores a media y alta altura
+      guardRail(x,y+0.95,z,l,rail);
+      guardRail(x,y+1.35,z,l,rail);
+      guardRail(x,y+0.95,z+w,l,rail);
+      guardRail(x,y+1.35,z+w,l,rail);
     }
   }
-  // full diagonal
-  line([x,0,z],[x+l,H,z],diag,3);
-  // label
-  const P=project([x+l/2,H+0.35,z+w/2]);ctx.fillStyle='#111';ctx.font='bold 13px Arial';ctx.fillText(sys+' '+l.toFixed(2)+'m',P.x-35,P.y);
+
+  // diagonales completas por paño
+  tube([x,0,z],[x+l,H,z],diag,4);
+  tube([x,H,z+w],[x+l,0,z+w],diag,3.2);
+
+  // travesaños laterales para forma real
+  for(let j=0;j<levels;j++){
+    const y=j*LEVEL_H;
+    tube([x,y,z],[x,y+LEVEL_H,z+w],rail,2.2);
+    tube([x+l,y,z+w],[x+l,y+LEVEL_H,z],rail,2.2);
+  }
+
+  // etiqueta
+  const P=project([x+l/2,H+0.45,z+w/2]);
+  ctx.save();
+  ctx.fillStyle='rgba(255,255,255,.88)';
+  ctx.strokeStyle='#ddd';
+  ctx.lineWidth=1;
+  ctx.beginPath();
+  ctx.roundRect(P.x-54,P.y-18,108,24,8);
+  ctx.fill();ctx.stroke();
+  ctx.fillStyle='#111';ctx.font='bold 12px Arial';ctx.textAlign='center';
+  ctx.fillText(sys+' · '+l.toFixed(2)+'m',P.x,P.y-2);
+  ctx.restore();
 }
 function drawGround(){
   ctx.strokeStyle='#ddd';ctx.lineWidth=1;
