@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>KAYN · Editor módulos</title>
+<style>
+body{margin:0;font-family:Arial;background:#f4f5f7;color:#111;overscroll-behavior:none}
+header{background:linear-gradient(135deg,#050505,#222);color:#fff;padding:12px;position:sticky;top:0;z-index:10;box-shadow:0 8px 24px #0005}
+.logo{display:flex;align-items:center;gap:10px}.logo img{width:44px;height:44px;border-radius:13px;background:#000;object-fit:contain;border:1px solid #333;padding:3px}
+h1{margin:0;color:#f5c400;font-size:18px}.sub{font-size:12px;color:#ddd}
+main{padding:10px;max-width:1200px;margin:auto}
+.card{background:#fff;border:1px solid #e6e8ec;border-radius:20px;padding:12px;margin-bottom:10px;box-shadow:0 8px 24px #0001}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+label{font-size:12px;color:#555;font-weight:800;display:block;margin-bottom:3px}
+input,select,button{width:100%;border:1px solid #d0d5dd;border-radius:13px;padding:10px;font-size:15px;background:#fff}
+button{background:#111;color:#fff;border:0;font-weight:900}.yellow{background:#f5c400!important;color:#000!important}.light{background:#eee!important;color:#111!important;border:1px solid #ddd!important}
+.row{display:flex;gap:8px;flex-wrap:wrap}.row button,.row a{width:auto}
+#wrap{background:#1b1b1b;border-radius:20px;padding:8px;overflow:hidden;touch-action:none}
+canvas{width:100%;height:65vh;display:block;background:#fbfbfb;border-radius:14px;touch-action:none}
+.note{font-size:12px;color:#667085}
+table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:8px;border-bottom:1px solid #eee;text-align:left}th{background:#111;color:#f5c400}
+@media(max-width:720px){.grid{grid-template-columns:repeat(2,1fr)}.row button,.row a{width:100%}canvas{height:62vh}}
+</style>
+</head>
+<body>
+<header><div class="logo"><img src="/logo.png" onerror="this.src='/icon-192.png'"><div><h1>KAYN · Editor módulos 2D</h1><div class="sub">Mover módulos con el dedo · zoom · guardar</div></div></div></header>
+<main>
+<div class="card"><div class="row"><a href="./index.html" style="font-weight:bold;color:#111">← Volver a la app</a></div></div>
+<div class="card">
+<h2>Crear módulo</h2>
+<div class="grid">
+<div><label>Sistema</label><select id="sistema"><option>Europeo</option><option>ULMA</option></select></div>
+<div><label>Medida</label><select id="medida"><option value="0.73">0.73 m</option><option value="1.00">1.00 m</option><option value="1.50">1.50 m</option><option value="2.00">2.00 m</option><option value="2.50">2.50 m</option><option value="3.00" selected>3.00 m</option></select></div>
+<div><label>Ancho</label><select id="ancho"><option value="0.70">0.70 m</option><option value="0.73">0.73 m</option><option value="1.00">1.00 m</option><option value="1.50">1.50 m</option></select></div>
+<div><label>Niveles</label><input id="niveles" type="number" value="3" min="1" max="20"></div>
+</div><br>
+<div class="row">
+<button class="yellow" onclick="addModule()">Añadir</button>
+<button class="light" onclick="duplicateSelected()">Duplicar</button>
+<button class="light" onclick="deleteSelected()">Eliminar</button>
+<button class="light" onclick="alignSelected()">Alinear</button>
+<button class="yellow" onclick="saveProject()">Guardar</button>
+<button class="light" onclick="loadProject()">Cargar</button>
+<button class="light" onclick="clearProject()">Borrar todo</button>
+</div>
+<p class="note">Arrastra módulos. Usa pellizco o rueda para zoom. Esta fase no cambia el cálculo principal.</p>
+</div>
+<div id="wrap"><canvas id="stage" width="1400" height="850"></canvas></div>
+<div class="card"><h2>Resumen</h2><div id="summary"></div></div>
+</main>
+<script>
+const canvas=document.getElementById('stage'),ctx=canvas.getContext('2d');let modules=[],selected=null,scale=1,panX=120,panY=170,dragging=false,panning=false,dragOff={x:0,y:0},lastPointer=null,pinchStart=null;const PX=70,GRID=.5;
+function worldToScreen(x,y){return{x:x*PX*scale+panX,y:y*PX*scale+panY}}function screenToWorld(x,y){return{x:(x-panX)/(PX*scale),y:(y-panY)/(PX*scale)}}function snap(v){return Math.round(v/GRID)*GRID}
+function addModule(){let med=parseFloat(document.getElementById('medida').value),ancho=parseFloat(document.getElementById('ancho').value),niveles=parseInt(document.getElementById('niveles').value||1),sistema=document.getElementById('sistema').value,x=modules.length?modules[modules.length-1].x+modules[modules.length-1].largo:0;modules.push({id:Date.now()+Math.random(),x:snap(x),y:0,largo:med,ancho,niveles,sistema});selected=modules[modules.length-1].id;draw()}
+function duplicateSelected(){let m=modules.find(a=>a.id===selected);if(!m)return;let c={...m,id:Date.now()+Math.random(),x:m.x+m.largo};modules.push(c);selected=c.id;draw()}
+function deleteSelected(){modules=modules.filter(m=>m.id!==selected);selected=null;draw()}function alignSelected(){let m=modules.find(a=>a.id===selected);if(m){m.x=snap(m.x);m.y=snap(m.y);draw()}}
+function clearProject(){if(confirm('¿Borrar editor?')){modules=[];selected=null;draw()}}function saveProject(){localStorage.kaynEditorModulos=JSON.stringify({modules,scale,panX,panY});alert('Guardado')}function loadProject(){try{let p=JSON.parse(localStorage.kaynEditorModulos||'{}');modules=p.modules||[];scale=p.scale||1;panX=p.panX||120;panY=p.panY||170;selected=null;draw()}catch(e){}}
+function hitTest(wx,wy){for(let i=modules.length-1;i>=0;i--){let m=modules[i];if(wx>=m.x&&wx<=m.x+m.largo&&wy>=m.y&&wy<=m.y+m.ancho)return m}return null}
+function drawGrid(){ctx.clearRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#fbfbfb';ctx.fillRect(0,0,canvas.width,canvas.height);let step=PX*scale*GRID;ctx.strokeStyle='#e6e6e6';ctx.lineWidth=1;for(let x=panX%step;x<canvas.width;x+=step){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,canvas.height);ctx.stroke()}for(let y=panY%step;y<canvas.height;y+=step){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(canvas.width,y);ctx.stroke()}}
+function drawModule(m){let p=worldToScreen(m.x,m.y),w=m.largo*PX*scale,h=m.ancho*PX*scale,sel=m.id===selected;ctx.fillStyle=sel?'rgba(245,196,0,.28)':'rgba(20,117,255,.12)';ctx.strokeStyle=sel?'#f5c400':(m.sistema==='ULMA'?'#d7aa00':'#1475ff');ctx.lineWidth=sel?4:3;ctx.fillRect(p.x,p.y,w,h);ctx.strokeRect(p.x,p.y,w,h);ctx.strokeStyle='#111';ctx.lineWidth=2;for(let i=0;i<=m.niveles;i++){let yy=p.y+h*(i/Math.max(1,m.niveles));ctx.beginPath();ctx.moveTo(p.x,yy);ctx.lineTo(p.x+w,yy);ctx.stroke()}ctx.strokeStyle=m.sistema==='ULMA'?'#c59a00':'#777';ctx.beginPath();ctx.moveTo(p.x+6,p.y+h-6);ctx.lineTo(p.x+w-6,p.y+6);ctx.stroke();ctx.fillStyle='#111';ctx.font='bold '+Math.max(11,14*scale)+'px Arial';ctx.fillText(m.sistema+' · '+m.largo.toFixed(2)+'m',p.x+8,p.y+18);ctx.font=Math.max(10,12*scale)+'px Arial';ctx.fillText(m.niveles+' niveles',p.x+8,p.y+36)}
+function draw(){drawGrid();modules.forEach(drawModule);renderSummary()}
+function renderSummary(){let total=modules.reduce((a,m)=>a+m.largo,0),area=modules.reduce((a,m)=>a+m.largo*m.ancho*m.niveles,0),ulma=modules.filter(m=>m.sistema==='ULMA').length,eur=modules.filter(m=>m.sistema==='Europeo').length;document.getElementById('summary').innerHTML='<table><tr><th>Módulos</th><th>Largo visual</th><th>Área aprox.</th><th>Europeo</th><th>ULMA</th></tr><tr><td>'+modules.length+'</td><td>'+total.toFixed(2)+' m</td><td>'+area.toFixed(2)+' m²</td><td>'+eur+'</td><td>'+ulma+'</td></tr></table>'}
+function pointerPos(e){let r=canvas.getBoundingClientRect(),t=e.touches?e.touches[0]:e;return{x:(t.clientX-r.left)*(canvas.width/r.width),y:(t.clientY-r.top)*(canvas.height/r.height)}}
+canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);let pos=pointerPos(e),w=screenToWorld(pos.x,pos.y),m=hitTest(w.x,w.y);if(m){selected=m.id;dragging=true;dragOff.x=w.x-m.x;dragOff.y=w.y-m.y}else{panning=true;lastPointer=pos}draw()});
+canvas.addEventListener('pointermove',e=>{let pos=pointerPos(e);if(dragging&&selected){let w=screenToWorld(pos.x,pos.y),m=modules.find(a=>a.id===selected);if(m){m.x=snap(w.x-dragOff.x);m.y=snap(w.y-dragOff.y);draw()}}else if(panning&&lastPointer){panX+=pos.x-lastPointer.x;panY+=pos.y-lastPointer.y;lastPointer=pos;draw()}});
+canvas.addEventListener('pointerup',()=>{dragging=false;panning=false;lastPointer=null});canvas.addEventListener('wheel',e=>{e.preventDefault();scale=Math.max(.35,Math.min(3,scale*(e.deltaY<0?1.08:.92)));draw()},{passive:false});
+canvas.addEventListener('touchmove',e=>{if(e.touches.length===2){e.preventDefault();let a=e.touches[0],b=e.touches[1],d=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);if(!pinchStart)pinchStart={d,scale};scale=Math.max(.35,Math.min(3,pinchStart.scale*(d/pinchStart.d)));draw()}},{passive:false});canvas.addEventListener('touchend',()=>{pinchStart=null},{passive:true});
+loadProject();if(!modules.length){addModule();addModule()}draw();
+</script>
+</body>
+</html>
